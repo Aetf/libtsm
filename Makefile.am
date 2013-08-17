@@ -115,11 +115,11 @@ include_HEADERS += \
 	src/tsm_screen.h \
 	src/tsm_unicode.h \
 	src/tsm_vte.h \
-	src/tsm.h
+	src/libtsm.h
 pkgconfig_DATA += docs/libtsm.pc
 
 libtsm_la_SOURCES = \
-	src/tsm.h \
+	src/libtsm.h \
 	src/tsm_unicode.h \
 	src/tsm_unicode.c \
 	src/tsm_screen.h \

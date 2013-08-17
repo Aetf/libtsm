@@ -29,11 +29,11 @@
  * available TSM headers for you.
  */
 
-#ifndef TSM_H
-#define TSM_H
+#ifndef LIBTSM_H
+#define LIBTSM_H
 
 #include <tsm_unicode.h>
 #include <tsm_screen.h>
 #include <tsm_vte.h>
 
-#endif /* TSM_H */
+#endif /* LIBTSM_H */
