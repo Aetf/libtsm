@@ -550,6 +550,7 @@ static void reset_state(struct tsm_vte *vte)
 	vte->saved_state.cattr.underline = 0;
 	vte->saved_state.cattr.inverse = 0;
 	vte->saved_state.cattr.protect = 0;
+	vte->saved_state.cattr.blink = 0;
 }
 
 static void save_state(struct tsm_vte *vte)
@@ -1039,12 +1040,16 @@ static void csi_attribute(struct tsm_vte *vte)
 			vte->cattr.bold = 0;
 			vte->cattr.underline = 0;
 			vte->cattr.inverse = 0;
+			vte->cattr.blink = 0;
 			break;
 		case 1:
 			vte->cattr.bold = 1;
 			break;
 		case 4:
 			vte->cattr.underline = 1;
+			break;
+		case 5:
+			vte->cattr.blink = 1;
 			break;
 		case 7:
 			vte->cattr.inverse = 1;
@@ -1054,6 +1059,9 @@ static void csi_attribute(struct tsm_vte *vte)
 			break;
 		case 24:
 			vte->cattr.underline = 0;
+			break;
+		case 25:
+			vte->cattr.blink = 0;
 			break;
 		case 27:
 			vte->cattr.inverse = 0;
