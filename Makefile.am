@@ -93,7 +93,6 @@ endif
 noinst_LTLIBRARIES += libshl.la
 
 libshl_la_SOURCES = \
-	src/shl_dlist.h \
 	src/shl_array.h \
 	src/shl_hashtable.h \
 	external/htable.h \
