@@ -87,7 +87,7 @@ AM_CONDITIONAL([BUILD_ENABLE_DEBUG],
                [test "x$enable_debug" = "xyes"])
 
 # optimizations
-AC_MSG_CHECKING([whether to disable code optimizations])
+AC_MSG_CHECKING([whether to enable code optimizations])
 AC_ARG_ENABLE([optimizations],
               [AS_HELP_STRING([--disable-optimizations],
                               [whether to disable code optimizations])])
