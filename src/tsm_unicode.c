@@ -58,10 +58,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "external/wcwidth.h"
+#include "libtsm.h"
 #include "shl_array.h"
 #include "shl_hashtable.h"
 #include "shl_misc.h"
-#include "tsm_unicode.h"
 
 /*
  * Unicode Symbol Handling

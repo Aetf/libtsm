@@ -35,11 +35,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
+#include "libtsm.h"
 #include "shl_llog.h"
 #include "shl_misc.h"
 #include "shl_timer.h"
-#include "tsm_screen.h"
-#include "tsm_unicode.h"
 
 #define LLOG_SUBSYSTEM "tsm_screen"
 

@@ -49,11 +49,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "libtsm.h"
 #include "shl_llog.h"
 #include "shl_misc.h"
-#include "tsm_screen.h"
-#include "tsm_unicode.h"
-#include "tsm_vte.h"
 
 #ifdef BUILD_HAVE_XKBCOMMON
 #  include <xkbcommon/xkbcommon-keysyms.h>
