@@ -38,6 +38,7 @@ pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA =
 TPHONY =
 
+TESTS =
 check_PROGRAMS =
 lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
@@ -141,6 +142,31 @@ libtsm_la_LDFLAGS = \
 if BUILD_HAVE_XKBCOMMON
 libtsm_la_CPPFLAGS += $(XKBCOMMON_CFLAGS)
 endif
+
+#
+# Tests
+#
+
+if BUILD_HAVE_CHECK
+check_PROGRAMS += test_hashtable
+TESTS += test_hashtable
+endif
+
+test_sources = \
+	test/test_common.h
+test_libs = \
+	libshl.la \
+	$(CHECK_LIBS)
+test_cflags = \
+	$(AM_CPPFLAGS) \
+	$(CHECK_CFLAGS)
+test_lflags = \
+	$(AM_LDFLAGS)
+
+test_hashtable_SOURCES = test/test_hashtable.c $(test_sources)
+test_hashtable_CPPFLAGS = $(test_cflags)
+test_hashtable_LDADD = $(test_libs)
+test_hashtable_LDFLAGS = $(test_lflags)
 
 #
 # Phony targets

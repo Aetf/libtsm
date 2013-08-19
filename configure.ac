@@ -61,6 +61,12 @@ if test "x$have_xkbcommon" = "xyes" ; then
 fi
 AM_CONDITIONAL([BUILD_HAVE_XKBCOMMON], [test "x$have_xkbcommon" = "xyes"])
 
+PKG_CHECK_MODULES([CHECK], [check],
+                  [have_check=yes], [have_check=no])
+AC_SUBST(CHECK_CFLAGS)
+AC_SUBST(CHECK_LIBS)
+AM_CONDITIONAL([BUILD_HAVE_CHECK], [test "x$have_check" = "xyes"])
+
 #
 # Parse arguments
 # This parses all arguments that are given via "--enable-XY" or "--with-XY" and
@@ -128,5 +134,6 @@ AC_MSG_NOTICE([Build configuration:
   Miscellaneous Options:
                 debug: $enable_debug
         optimizations: $enable_optimizations
+       building tests: $have_check
 
         Run "${MAKE-make}" to start compilation process])

@@ -1,8 +1,10 @@
 *.la
 *.lo
+*.log
 *.o
 *.swp
 *.tar.xz
+*.trs
 .deps/
 .dirstamp
 .libs/
@@ -20,3 +22,5 @@ docs/libtsm.pc
 libtool
 m4/
 stamp-h1
+test-suite.log
+test_hashtable
