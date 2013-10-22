@@ -635,19 +635,21 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 		}
 	}
 
-	/* clear expansion area */
+	/* clear expansion/padding area */
 	for (j = 0; j < con->line_num; ++j) {
 		i = 0;
 		if (j < con->size_y)
 			i = con->size_x;
 
-		for ( ; i < x; ++i)
+		/* main-lines may go into SB, so clear all cells */
+		for ( ; i < con->main_lines[j]->size; ++i)
 			cell_init(con, &con->main_lines[j]->cells[i]);
 
 		i = 0;
 		if (j < con->size_y)
 			i = con->size_x;
 
+		/* alt-lines never go into SB, only clear visible cells */
 		for ( ; i < x; ++i)
 			cell_init(con, &con->alt_lines[j]->cells[i]);
 	}
