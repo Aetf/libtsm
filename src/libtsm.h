@@ -140,8 +140,6 @@ struct tsm_screen_attr {
 	unsigned int blink : 1;		/* blinking character */
 };
 
-typedef int (*tsm_screen_prepare_cb) (struct tsm_screen *con,
-				      void *data);
 typedef int (*tsm_screen_draw_cb) (struct tsm_screen *con,
 				   uint32_t id,
 				   const uint32_t *ch,
@@ -151,8 +149,6 @@ typedef int (*tsm_screen_draw_cb) (struct tsm_screen *con,
 				   unsigned int posy,
 				   const struct tsm_screen_attr *attr,
 				   void *data);
-typedef int (*tsm_screen_render_cb) (struct tsm_screen *con,
-				     void *data);
 
 int tsm_screen_new(struct tsm_screen **out, tsm_log_t log, void *log_data);
 void tsm_screen_ref(struct tsm_screen *con);
@@ -235,10 +231,7 @@ void tsm_screen_selection_target(struct tsm_screen *con,
 				 unsigned int posy);
 int tsm_screen_selection_copy(struct tsm_screen *con, char **out);
 
-void tsm_screen_draw(struct tsm_screen *con,
-		     tsm_screen_prepare_cb prepare_cb,
-		     tsm_screen_draw_cb draw_cb,
-		     tsm_screen_render_cb render_cb,
+void tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 		     void *data);
 
 /* available character sets */

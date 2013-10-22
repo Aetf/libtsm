@@ -1763,11 +1763,8 @@ int tsm_screen_selection_copy(struct tsm_screen *con, char **out)
 }
 
 SHL_EXPORT
-void tsm_screen_draw(struct tsm_screen *con,
-			 tsm_screen_prepare_cb prepare_cb,
-			 tsm_screen_draw_cb draw_cb,
-			 tsm_screen_render_cb render_cb,
-			 void *data)
+void tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
+		     void *data)
 {
 	unsigned int cur_x, cur_y;
 	unsigned int i, j, k;
@@ -1793,17 +1790,6 @@ void tsm_screen_draw(struct tsm_screen *con,
 	cur_y = con->cursor_y;
 	if (con->cursor_y >= con->size_y)
 		cur_y = con->size_y - 1;
-
-	/* render preparation */
-
-	if (prepare_cb) {
-		ret = prepare_cb(con, data);
-		if (ret) {
-			llog_warning(con,
-				     "cannot prepare text-renderer for rendering");
-			return;
-		}
-	}
 
 	/* push each character into rendering pipeline */
 
@@ -1913,14 +1899,5 @@ void tsm_screen_draw(struct tsm_screen *con,
 					cur_x, i, &attr, data);
 			}
 		}
-	}
-
-	/* perform final rendering steps */
-
-	if (render_cb) {
-		ret = render_cb(con, data);
-		if (ret)
-			llog_warning(con,
-				     "cannot render via text-renderer");
 	}
 }
