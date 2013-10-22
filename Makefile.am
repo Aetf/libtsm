@@ -98,7 +98,6 @@ libshl_la_SOURCES = \
 	src/shl_hashtable.h \
 	external/htable.h \
 	external/htable.c \
-	src/shl_timer.h \
 	src/shl_llog.h \
 	src/shl_misc.h
 libshl_la_CPPFLAGS = $(AM_CPPFLAGS)
