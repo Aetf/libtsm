@@ -38,7 +38,6 @@
 #include "libtsm.h"
 #include "shl_llog.h"
 #include "shl_misc.h"
-#include "shl_timer.h"
 
 #define LLOG_SUBSYSTEM "tsm_screen"
 
@@ -70,7 +69,6 @@ struct tsm_screen {
 	void *llog_data;
 	unsigned int opts;
 	unsigned int flags;
-	struct shl_timer *timer;
 
 	/* default attributes for new cells */
 	struct tsm_screen_attr def_attr;
@@ -458,21 +456,16 @@ int tsm_screen_new(struct tsm_screen **out, tsm_log_t log, void *log_data)
 	con->def_attr.fg = 255;
 	con->def_attr.fb = 255;
 
-	ret = shl_timer_new(&con->timer);
-	if (ret)
-		goto err_free;
-
 	ret = tsm_screen_resize(con, 80, 24);
 	if (ret)
-		goto err_timer;
+		goto err_free;
 
 	llog_debug(con, "new screen");
 	*out = con;
 
 	return 0;
 
-err_timer:
-	shl_timer_free(con->timer);
+err_free:
 	for (i = 0; i < con->line_num; ++i) {
 		line_free(con->main_lines[i]);
 		line_free(con->alt_lines[i]);
@@ -480,7 +473,6 @@ err_timer:
 	free(con->main_lines);
 	free(con->alt_lines);
 	free(con->tab_ruler);
-err_free:
 	free(con);
 	return ret;
 }
@@ -511,7 +503,6 @@ void tsm_screen_unref(struct tsm_screen *con)
 	free(con->main_lines);
 	free(con->alt_lines);
 	free(con->tab_ruler);
-	shl_timer_free(con->timer);
 	free(con);
 }
 
@@ -1785,7 +1776,6 @@ void tsm_screen_draw(struct tsm_screen *con,
 	struct tsm_screen_attr attr;
 	bool cursor_done = false;
 	int ret, warned = 0;
-	uint64_t time_prep = 0, time_draw = 0, time_rend = 0;
 	const uint32_t *ch;
 	size_t len;
 	struct cell empty;
@@ -1807,26 +1797,15 @@ void tsm_screen_draw(struct tsm_screen *con,
 	/* render preparation */
 
 	if (prepare_cb) {
-		if (con->opts & TSM_SCREEN_OPT_RENDER_TIMING)
-			shl_timer_reset(con->timer);
-
 		ret = prepare_cb(con, data);
 		if (ret) {
 			llog_warning(con,
 				     "cannot prepare text-renderer for rendering");
 			return;
 		}
-
-		if (con->opts & TSM_SCREEN_OPT_RENDER_TIMING)
-			time_prep = shl_timer_elapsed(con->timer);
-	} else {
-		time_prep = 0;
 	}
 
 	/* push each character into rendering pipeline */
-
-	if (con->opts & TSM_SCREEN_OPT_RENDER_TIMING)
-		shl_timer_reset(con->timer);
 
 	iter = con->sb_pos;
 	k = 0;
@@ -1936,29 +1915,12 @@ void tsm_screen_draw(struct tsm_screen *con,
 		}
 	}
 
-	if (con->opts & TSM_SCREEN_OPT_RENDER_TIMING)
-		time_draw = shl_timer_elapsed(con->timer);
-
 	/* perform final rendering steps */
 
 	if (render_cb) {
-		if (con->opts & TSM_SCREEN_OPT_RENDER_TIMING)
-			shl_timer_reset(con->timer);
-
 		ret = render_cb(con, data);
 		if (ret)
 			llog_warning(con,
 				     "cannot render via text-renderer");
-
-		if (con->opts & TSM_SCREEN_OPT_RENDER_TIMING)
-			time_rend = shl_timer_elapsed(con->timer);
-	} else {
-		time_rend = 0;
 	}
-
-	if (con->opts & TSM_SCREEN_OPT_RENDER_TIMING)
-		llog_debug(con,
-			   "timing: sum: %" PRIu64 " prepare: %" PRIu64 " draw: %" PRIu64 " render: %" PRIu64,
-			   time_prep + time_draw + time_rend,
-			   time_prep, time_draw, time_rend);
 }
