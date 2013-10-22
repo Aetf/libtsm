@@ -25,9 +25,23 @@
 
 /*
  * Screen Management
- * This provides the screen drawing and manipulation functions. It does not
- * provide the terminal emulation. It is just an abstraction layer to draw text
- * to a framebuffer as used by terminals and consoles.
+ * This provides the abstracted screen management. It does not do any
+ * terminal-emulation, instead it provides a resizable table of cells. You can
+ * insert, remove and modify the cells freely.
+ * A screen has always a fixed, but changeable, width and height. This defines
+ * the number of columns and rows. The screen doesn't care for pixels, glyphs or
+ * framebuffers. The screen only contains information about each cell.
+ *
+ * Screens are the logical model behind a real screen of a terminal emulator.
+ * Users usually allocate a screen for each terminal-emulator they run. All they
+ * have to do is render the screen onto their widget on each change and forward
+ * any widget-events to the screen.
+ *
+ * The screen object already includes scrollback-buffers, selection support and
+ * more. This simplifies terminal emulators a lot, but also prevents them from
+ * accessing the real screen data. However, terminal emulators should have no
+ * reason to access the data directly. The screen API should provide everything
+ * they need.
  */
 
 #include <errno.h>
@@ -677,7 +691,7 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 		con->cursor_x = con->size_x - 1;
 
 	/* scroll buffer if screen height shrinks */
-	if (con->size_y != 0 && y < con->size_y) {
+	if (y < con->size_y) {
 		diff = con->size_y - y;
 		screen_scroll_up(con, diff);
 		if (con->cursor_y > diff)
@@ -821,13 +835,10 @@ void tsm_screen_sb_down(struct tsm_screen *con, unsigned int num)
 		return;
 
 	while (num--) {
-		if (con->sb_pos) {
+		if (con->sb_pos)
 			con->sb_pos = con->sb_pos->next;
-			if (!con->sb_pos)
-				return;
-		} else {
+		else
 			return;
-		}
 	}
 }
 
@@ -1308,9 +1319,8 @@ void tsm_screen_insert_chars(struct tsm_screen *con, unsigned int num)
 			&cells[con->cursor_x],
 			mv * sizeof(*cells));
 
-	for (i = 0; i < num; ++i) {
+	for (i = 0; i < num; ++i)
 		cell_init(con, &cells[con->cursor_x + i]);
-	}
 }
 
 SHL_EXPORT
@@ -1338,9 +1348,8 @@ void tsm_screen_delete_chars(struct tsm_screen *con, unsigned int num)
 			&cells[con->cursor_x + num],
 			mv * sizeof(*cells));
 
-	for (i = 0; i < num; ++i) {
+	for (i = 0; i < num; ++i)
 		cell_init(con, &cells[con->cursor_x + mv + i]);
-	}
 }
 
 SHL_EXPORT
