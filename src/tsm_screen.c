@@ -644,24 +644,20 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 		}
 	}
 
+	/* clear expansion area */
 	for (j = 0; j < con->line_num; ++j) {
-		if (j >= con->size_y)
-			i = 0;
-		else
+		i = 0;
+		if (j < con->size_y)
 			i = con->size_x;
 
-		if (x < con->main_lines[j]->size)
-			width = x;
-		else
-			width = con->main_lines[j]->size;
-		for (; i < width; ++i)
+		for ( ; i < x; ++i)
 			cell_init(con, &con->main_lines[j]->cells[i]);
 
-		if (x < con->alt_lines[j]->size)
-			width = x;
-		else
-			width = con->alt_lines[j]->size;
-		for (; i < width; ++i)
+		i = 0;
+		if (j < con->size_y)
+			i = con->size_x;
+
+		for ( ; i < x; ++i)
 			cell_init(con, &con->alt_lines[j]->cells[i]);
 	}
 
