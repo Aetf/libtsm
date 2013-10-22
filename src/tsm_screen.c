@@ -1775,14 +1775,11 @@ void tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 	int ret, warned = 0;
 	const uint32_t *ch;
 	size_t len;
-	struct cell empty;
 	bool in_sel = false, sel_start = false, sel_end = false;
 	bool was_sel = false;
 
 	if (!con || !draw_cb)
 		return;
-
-	cell_init(con, &empty);
 
 	cur_x = con->cursor_x;
 	if (con->cursor_x >= con->size_x)
@@ -1837,10 +1834,7 @@ void tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 		}
 
 		for (j = 0; j < con->size_x; ++j) {
-			if (j < line->size)
-				cell = &line->cells[j];
-			else
-				cell = &empty;
+			cell = &line->cells[j];
 			memcpy(&attr, &cell->attr, sizeof(attr));
 
 			if (con->sel_active) {
