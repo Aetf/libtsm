@@ -23,4 +23,4 @@ libtool
 m4/
 stamp-h1
 test-suite.log
-test_hashtable
+test_htable

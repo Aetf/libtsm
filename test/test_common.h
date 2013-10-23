@@ -43,7 +43,8 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "libtsm.h"
-#include "shl_hashtable.h"
+#include "libtsm_int.h"
+#include "shl_htable.h"
 
 /* lower address-space is protected from user-allocation, so this is invalid */
 #define TEST_INVALID_PTR ((void*)0x10)

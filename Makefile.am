@@ -146,8 +146,10 @@ endif
 #
 
 if BUILD_HAVE_CHECK
-check_PROGRAMS += test_hashtable
-TESTS += test_hashtable
+check_PROGRAMS += \
+	test_htable
+TESTS += \
+	test_htable
 endif
 
 test_sources = \
@@ -161,10 +163,10 @@ test_cflags = \
 test_lflags = \
 	$(AM_LDFLAGS)
 
-test_hashtable_SOURCES = test/test_hashtable.c $(test_sources)
-test_hashtable_CPPFLAGS = $(test_cflags)
-test_hashtable_LDADD = $(test_libs)
-test_hashtable_LDFLAGS = $(test_lflags)
+test_htable_SOURCES = test/test_htable.c $(test_sources)
+test_htable_CPPFLAGS = $(test_cflags)
+test_htable_LDADD = $(test_libs)
+test_htable_LDFLAGS = $(test_lflags)
 
 #
 # Phony targets
