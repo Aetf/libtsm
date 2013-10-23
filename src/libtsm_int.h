@@ -1,5 +1,5 @@
 /*
- * shl - Miscellaneous small helpers
+ * TSM - Main internal header
  *
  * Copyright (c) 2011-2013 David Herrmann <dh.herrmann@gmail.com>
  *
@@ -23,17 +23,11 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*
- * Miscellaneous helpers
- */
+#ifndef TSM_LIBTSM_INT_H
+#define TSM_LIBTSM_INT_H
 
-#ifndef SHL_MISC_H
-#define SHL_MISC_H
-
-#include <errno.h>
-#include <limits.h>
 #include <stdlib.h>
 
 #define SHL_EXPORT __attribute__((visibility("default")))
 
-#endif /* SHL_MISC_H */
+#endif /* TSM_LIBTSM_INT_H */

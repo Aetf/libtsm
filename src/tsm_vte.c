@@ -50,8 +50,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libtsm.h"
+#include "libtsm_int.h"
 #include "shl_llog.h"
-#include "shl_misc.h"
 
 #ifdef BUILD_HAVE_XKBCOMMON
 #  include <xkbcommon/xkbcommon-keysyms.h>

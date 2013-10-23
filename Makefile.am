@@ -98,8 +98,7 @@ libshl_la_SOURCES = \
 	src/shl_hashtable.h \
 	external/htable.h \
 	external/htable.c \
-	src/shl_llog.h \
-	src/shl_misc.h
+	src/shl_llog.h
 libshl_la_CPPFLAGS = $(AM_CPPFLAGS)
 libshl_la_LDFLAGS = $(AM_LDFLAGS)
 libshl_la_LIBADD = $(AM_LIBADD)
@@ -119,6 +118,7 @@ pkgconfig_DATA += docs/libtsm.pc
 
 libtsm_la_SOURCES = \
 	src/libtsm.h \
+	src/libtsm_int.h \
 	src/tsm_unicode.h \
 	src/tsm_unicode.c \
 	src/tsm_screen.h \

@@ -67,7 +67,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libtsm.h"
-#include "shl_misc.h"
+#include "libtsm_int.h"
 
 /*
  * Lower Unicode character set. This maps the characters to the basic ASCII

@@ -59,9 +59,9 @@
 #include <string.h>
 #include "external/wcwidth.h"
 #include "libtsm.h"
+#include "libtsm_int.h"
 #include "shl_array.h"
 #include "shl_hashtable.h"
-#include "shl_misc.h"
 
 /*
  * Unicode Symbol Handling
