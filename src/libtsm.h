@@ -23,22 +23,47 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-/*
- * Main Header
- * For convenience, you can include this header which then includes all
- * available TSM headers for you.
- */
-
-#ifndef LIBTSM_H
-#define LIBTSM_H
+#ifndef TSM_LIBTSM_H
+#define TSM_LIBTSM_H
 
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
- * tsm_log_t:
+ * @mainpage
+ *
+ * TSM is a Terminal-emulator State Machine. It implements all common DEC-VT100
+ * to DEC-VT520 control codes and features. A state-machine is used to parse TTY
+ * input and saved in a virtual screen. TSM does not provide any rendering,
+ * glyph/font handling or anything more advanced. TSM is just a simple
+ * state-machine for control-codes handling.
+ * The main use-case for TSM are terminal-emulators. TSM has no dependencies
+ * other than an ISO-C99 compiler and C-library. Any terminal emulator for any
+ * window-environment or rendering-pipline can make use of TSM. However, TSM can
+ * also be used for control-code validation, TTY-screen-capturing or other
+ * advanced users of terminal escape-sequences.
+ */
+
+/**
+ * @defgroup misc Miscellaneous Definitions
+ * Miscellaneous definitions
+ *
+ * This section contains several miscellaneous definitions of small helpers and
+ * constants. These are shared between other parts of the API and have common
+ * semantics/syntax.
+ *
+ * @{
+ */
+
+/**
+ * Logging Callback
+ *
  * @data: user-provided data
  * @file: Source code file where the log message originated or NULL
  * @line: Line number in source code or 0
@@ -59,6 +84,22 @@ typedef void (*tsm_log_t) (void *data,
 			   unsigned int sev,
 			   const char *format,
 			   va_list args);
+
+/** @} */
+
+/**
+ * @defgroup symbols Unicode Symbols
+ * Unicode symbol helpers
+ *
+ * Unicode uses 32bit types to uniquely represent symbols. However, combining
+ * characters allow modifications of such symbols but require additional space.
+ * To avoid passing around allocated strings, TSM provides a symbol-table which
+ * can store combining-characters with their base-symbol to create a new symbol.
+ * This way, only the symbol-identifiers have to be passed around (which are
+ * simple integers). No string allocation is needed by the API user.
+ *
+ * @{
+ */
 
 /* UCS4 helpers */
 
@@ -112,7 +153,24 @@ int tsm_utf8_mach_feed(struct tsm_utf8_mach *mach, char c);
 uint32_t tsm_utf8_mach_get(struct tsm_utf8_mach *mach);
 void tsm_utf8_mach_reset(struct tsm_utf8_mach *mach);
 
-/* screen objects */
+/** @} */
+
+/**
+ * @defgroup screen Terminal Screens
+ * Virtual terminal-screen implementation
+ *
+ * A TSM screen respresents the real screen of a terminal/application. It does
+ * not render anything, but only provides a table of cells. Each cell contains
+ * the stored symbol, attributes and more. Applications iterate a screen to
+ * render each cell on their framebuffer.
+ *
+ * Screens provide all features that are expected from terminals. They include
+ * scroll-back buffers, alternate screens, cursor positions and selection
+ * support. Thus, it needs event-input from applications to drive these
+ * features. Most of them are optional, though.
+ *
+ * @{
+ */
 
 struct tsm_screen;
 typedef uint_fast32_t tsm_age_t;
@@ -236,6 +294,23 @@ int tsm_screen_selection_copy(struct tsm_screen *con, char **out);
 tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 			  void *data);
 
+/** @} */
+
+/**
+ * @defgroup vte State Machine
+ * Virtual terminal emulation with state machine
+ *
+ * A TSM VTE object provides the terminal state machine. It takes input from the
+ * application (which usually comes from a TTY/PTY from a client), parses it,
+ * modifies the attach screen or returns data which has to be written back to
+ * the client.
+ *
+ * Furthermore, VTE objects accept keyboard or mouse input from the application
+ * which is interpreted compliant to DEV-VTs.
+ *
+ * @{
+ */
+
 /* available character sets */
 
 typedef tsm_symbol_t tsm_vte_charset[96];
@@ -281,4 +356,10 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 			     uint32_t ascii, unsigned int mods,
 			     uint32_t unicode);
 
-#endif /* LIBTSM_H */
+/** @} */
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* TSM_LIBTSM_H */
