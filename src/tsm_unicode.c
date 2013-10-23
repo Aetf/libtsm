@@ -106,9 +106,6 @@ struct tsm_symbol_table {
 	struct shl_hashtable *symbols;
 };
 
-/* TODO: remove the default context */
-static struct tsm_symbol_table *tsm_symbol_table_default;
-
 static unsigned int hash_ucs4(const void *key)
 {
 	unsigned int val = 5381;
@@ -226,7 +223,6 @@ const uint32_t *tsm_symbol_get(struct tsm_symbol_table *tbl,
 			       tsm_symbol_t *sym, size_t *size)
 {
 	uint32_t *ucs4, idx;
-	int ret;
 
 	if (*sym <= TSM_UCS4_MAX) {
 		if (size)
@@ -235,17 +231,7 @@ const uint32_t *tsm_symbol_get(struct tsm_symbol_table *tbl,
 	}
 
 	if (!tbl)
-		tbl = tsm_symbol_table_default;
-
-	if (!tbl) {
-		ret = tsm_symbol_table_new(&tbl);
-		if (ret) {
-			if (size)
-				*size = 1;
-			return &tsm_symbol_default;
-		}
-		tsm_symbol_table_default = tbl;
-	}
+		return sym;
 
 	idx = *sym - (TSM_UCS4_MAX + 1);
 	if (idx >= shl_array_get_length(tbl->index))
@@ -279,14 +265,7 @@ tsm_symbol_t tsm_symbol_append(struct tsm_symbol_table *tbl,
 	int ret;
 
 	if (!tbl)
-		tbl = tsm_symbol_table_default;
-
-	if (!tbl) {
-		ret = tsm_symbol_table_new(&tbl);
-		if (ret)
-			return sym;
-		tsm_symbol_table_default = tbl;
-	}
+		return sym;
 
 	if (ucs4 > TSM_UCS4_MAX)
 		return sym;
@@ -335,19 +314,11 @@ err_id:
 unsigned int tsm_symbol_get_width(struct tsm_symbol_table *tbl,
 				  tsm_symbol_t sym)
 {
-	int ret;
 	const uint32_t *ch;
 	size_t len;
 
 	if (!tbl)
-		tbl = tsm_symbol_table_default;
-
-	if (!tbl) {
-		ret = tsm_symbol_table_new(&tbl);
-		if (ret)
-			return sym;
-		tsm_symbol_table_default = tbl;
-	}
+		return 0;
 
 	ch = tsm_symbol_get(tbl, &sym, &len);
 	if (len == 0)
