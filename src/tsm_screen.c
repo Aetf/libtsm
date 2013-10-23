@@ -734,8 +734,6 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 	}
 
 	inc_age(con);
-	/* TODO: more sophisticated ageing */
-	con->age = con->age_cnt;
 
 	/* clear expansion/padding area */
 	start = x;
@@ -779,22 +777,22 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 
 	con->size_x = x;
 	if (con->cursor_x >= con->size_x)
-		con->cursor_x = con->size_x - 1;
+		move_cursor(con, con->size_x - 1, con->cursor_y);
 
 	/* scroll buffer if screen height shrinks */
 	if (y < con->size_y) {
 		diff = con->size_y - y;
 		screen_scroll_up(con, diff);
 		if (con->cursor_y > diff)
-			con->cursor_y -= diff;
+			move_cursor(con, con->cursor_x, con->cursor_y - diff);
 		else
-			con->cursor_y = 0;
+			move_cursor(con, con->cursor_x, 0);
 	}
 
 	con->size_y = y;
 	con->margin_bottom = con->size_y - 1;
 	if (con->cursor_y >= con->size_y)
-		con->cursor_y = con->size_y - 1;
+		move_cursor(con, con->cursor_x, con->size_y - 1);
 
 	return 0;
 }
