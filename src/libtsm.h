@@ -88,8 +88,8 @@ typedef void (*tsm_log_t) (void *data,
 /** @} */
 
 /**
- * @defgroup symbols Unicode Symbols
- * Unicode symbol helpers
+ * @defgroup symbols Unicode Helpers
+ * Unicode helpers
  *
  * Unicode uses 32bit types to uniquely represent symbols. However, combining
  * characters allow modifications of such symbols but require additional space.
@@ -97,6 +97,11 @@ typedef void (*tsm_log_t) (void *data,
  * can store combining-characters with their base-symbol to create a new symbol.
  * This way, only the symbol-identifiers have to be passed around (which are
  * simple integers). No string allocation is needed by the API user.
+ *
+ * The symbol table is currently not exported. Once the API is fixed, we will
+ * provide it to outside users.
+ *
+ * Additionally, this contains some general UTF8/UCS4 helpers.
  *
  * @{
  */
@@ -106,26 +111,6 @@ typedef void (*tsm_log_t) (void *data,
 #define TSM_UCS4_MAX (0x7fffffffUL)
 #define TSM_UCS4_INVALID (TSM_UCS4_MAX + 1)
 #define TSM_UCS4_REPLACEMENT (0xfffdUL)
-#define TSM_UCS4_MAXLEN 10
-
-/* symbols */
-
-struct tsm_symbol_table;
-typedef uint32_t tsm_symbol_t;
-
-extern const tsm_symbol_t tsm_symbol_default;
-
-int tsm_symbol_table_new(struct tsm_symbol_table **out);
-void tsm_symbol_table_ref(struct tsm_symbol_table *tbl);
-void tsm_symbol_table_unref(struct tsm_symbol_table *tbl);
-
-tsm_symbol_t tsm_symbol_make(uint32_t ucs4);
-tsm_symbol_t tsm_symbol_append(struct tsm_symbol_table *tbl,
-			       tsm_symbol_t sym, uint32_t ucs4);
-const uint32_t *tsm_symbol_get(struct tsm_symbol_table *tbl,
-			       tsm_symbol_t *sym, size_t *size);
-unsigned int tsm_symbol_get_width(struct tsm_symbol_table *tbl,
-				  tsm_symbol_t sym);
 
 /* ucs4 to utf8 converter */
 
@@ -133,25 +118,9 @@ unsigned int tsm_ucs4_get_width(uint32_t ucs4);
 size_t tsm_ucs4_to_utf8(uint32_t ucs4, char *out);
 char *tsm_ucs4_to_utf8_alloc(const uint32_t *ucs4, size_t len, size_t *len_out);
 
-/* utf8 state machine */
+/* symbols */
 
-struct tsm_utf8_mach;
-
-enum tsm_utf8_mach_state {
-	TSM_UTF8_START,
-	TSM_UTF8_ACCEPT,
-	TSM_UTF8_REJECT,
-	TSM_UTF8_EXPECT1,
-	TSM_UTF8_EXPECT2,
-	TSM_UTF8_EXPECT3,
-};
-
-int tsm_utf8_mach_new(struct tsm_utf8_mach **out);
-void tsm_utf8_mach_free(struct tsm_utf8_mach *mach);
-
-int tsm_utf8_mach_feed(struct tsm_utf8_mach *mach, char c);
-uint32_t tsm_utf8_mach_get(struct tsm_utf8_mach *mach);
-void tsm_utf8_mach_reset(struct tsm_utf8_mach *mach);
+typedef uint32_t tsm_symbol_t;
 
 /** @} */
 
@@ -213,10 +182,6 @@ typedef int (*tsm_screen_draw_cb) (struct tsm_screen *con,
 int tsm_screen_new(struct tsm_screen **out, tsm_log_t log, void *log_data);
 void tsm_screen_ref(struct tsm_screen *con);
 void tsm_screen_unref(struct tsm_screen *con);
-
-void tsm_screen_set_opts(struct tsm_screen *scr, unsigned int opts);
-void tsm_screen_reset_opts(struct tsm_screen *scr, unsigned int opts);
-unsigned int tsm_screen_get_opts(struct tsm_screen *scr);
 
 unsigned int tsm_screen_get_width(struct tsm_screen *con);
 unsigned int tsm_screen_get_height(struct tsm_screen *con);
@@ -310,15 +275,6 @@ tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
  *
  * @{
  */
-
-/* available character sets */
-
-typedef tsm_symbol_t tsm_vte_charset[96];
-
-extern tsm_vte_charset tsm_vte_unicode_lower;
-extern tsm_vte_charset tsm_vte_unicode_upper;
-extern tsm_vte_charset tsm_vte_dec_supplemental_graphics;
-extern tsm_vte_charset tsm_vte_dec_special_graphics;
 
 /* virtual terminal emulator */
 

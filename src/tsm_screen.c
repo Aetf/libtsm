@@ -543,7 +543,6 @@ void tsm_screen_unref(struct tsm_screen *con)
 	free(con);
 }
 
-SHL_EXPORT
 void tsm_screen_set_opts(struct tsm_screen *scr, unsigned int opts)
 {
 	if (!scr || !opts)
@@ -552,7 +551,6 @@ void tsm_screen_set_opts(struct tsm_screen *scr, unsigned int opts)
 	scr->opts |= opts;
 }
 
-SHL_EXPORT
 void tsm_screen_reset_opts(struct tsm_screen *scr, unsigned int opts)
 {
 	if (!scr || !opts)
@@ -561,7 +559,6 @@ void tsm_screen_reset_opts(struct tsm_screen *scr, unsigned int opts)
 	scr->opts &= ~opts;
 }
 
-SHL_EXPORT
 unsigned int tsm_screen_get_opts(struct tsm_screen *scr)
 {
 	if (!scr)
