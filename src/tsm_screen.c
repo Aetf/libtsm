@@ -165,6 +165,17 @@ static void move_cursor(struct tsm_screen *con, unsigned int x, unsigned int y)
 {
 	struct cell *c;
 
+	/* if cursor is hidden, just move it */
+	if (con->flags & TSM_SCREEN_HIDE_CURSOR) {
+		con->cursor_x = x;
+		con->cursor_y = y;
+		return;
+	}
+
+	/* If cursor is visible, we have to mark the current and the new cell
+	 * as changed by resetting their age. We skip it if the cursor-position
+	 * didn't actually change. */
+
 	if (con->cursor_x == x && con->cursor_y == y)
 		return;
 
