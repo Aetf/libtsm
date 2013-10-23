@@ -95,9 +95,8 @@ noinst_LTLIBRARIES += libshl.la
 
 libshl_la_SOURCES = \
 	src/shl_array.h \
-	src/shl_hashtable.h \
-	external/htable.h \
-	external/htable.c \
+	src/shl_htable.h \
+	src/shl_htable.c \
 	src/shl_llog.h
 libshl_la_CPPFLAGS = $(AM_CPPFLAGS)
 libshl_la_LDFLAGS = $(AM_LDFLAGS)

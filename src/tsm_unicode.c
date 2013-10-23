@@ -61,7 +61,7 @@
 #include "libtsm.h"
 #include "libtsm_int.h"
 #include "shl_array.h"
-#include "shl_hashtable.h"
+#include "shl_htable.h"
 
 /*
  * Unicode Symbol Handling
@@ -103,13 +103,12 @@ struct tsm_symbol_table {
 	unsigned long ref;
 	uint32_t next_id;
 	struct shl_array *index;
-	struct shl_hashtable *symbols;
+	struct shl_htable symbols;
 };
 
-static unsigned int hash_ucs4(const void *key)
+static size_t hash_ucs4(const void *key, void *priv)
 {
-	unsigned int val = 5381;
-	size_t i;
+	size_t i, val = 5381;
 	const uint32_t *ucs4 = key;
 
 	for (i = 0; ucs4[i] <= TSM_UCS4_MAX; ++i)
@@ -134,6 +133,14 @@ static bool cmp_ucs4(const void *a, const void *b)
 	}
 }
 
+static void free_ucs4(void *elem, void *priv)
+{
+	uint32_t *v = elem;
+
+	/* key is prefix with actual value so pass correct pointer */
+	free(--v);
+}
+
 int tsm_symbol_table_new(struct tsm_symbol_table **out)
 {
 	struct tsm_symbol_table *tbl;
@@ -149,6 +156,7 @@ int tsm_symbol_table_new(struct tsm_symbol_table **out)
 	memset(tbl, 0, sizeof(*tbl));
 	tbl->ref = 1;
 	tbl->next_id = TSM_UCS4_MAX + 2;
+	shl_htable_init(&tbl->symbols, cmp_ucs4, hash_ucs4, NULL);
 
 	ret = shl_array_new(&tbl->index, sizeof(uint32_t*), 4);
 	if (ret)
@@ -157,16 +165,9 @@ int tsm_symbol_table_new(struct tsm_symbol_table **out)
 	/* first entry is not used so add dummy */
 	shl_array_push(tbl->index, &val);
 
-	ret = shl_hashtable_new(&tbl->symbols, hash_ucs4, cmp_ucs4,
-				free, NULL);
-	if (ret)
-		goto err_array;
-
 	*out = tbl;
 	return 0;
 
-err_array:
-	shl_array_free(tbl->index);
 err_free:
 	free(tbl);
 	return ret;
@@ -185,7 +186,7 @@ void tsm_symbol_table_unref(struct tsm_symbol_table *tbl)
 	if (!tbl || !tbl->ref || --tbl->ref)
 		return;
 
-	shl_hashtable_free(tbl->symbols);
+	shl_htable_clear(&tbl->symbols, free_ucs4, NULL);
 	shl_array_free(tbl->index);
 	free(tbl);
 }
@@ -250,7 +251,6 @@ tsm_symbol_t tsm_symbol_append(struct tsm_symbol_table *tbl,
 	uint32_t buf[TSM_UCS4_MAXLEN + 1], nsym, *nval;
 	const uint32_t *ptr;
 	size_t s;
-	void *tmp;
 	bool res;
 	int ret;
 
@@ -268,22 +268,32 @@ tsm_symbol_t tsm_symbol_append(struct tsm_symbol_table *tbl,
 	buf[s++] = ucs4;
 	buf[s++] = TSM_UCS4_MAX + 1;
 
-	res = shl_hashtable_find(tbl->symbols, &tmp, buf);
-	if (res)
-		return (uint32_t)(long)tmp;
+	res = shl_htable_lookup(&tbl->symbols, buf, hash_ucs4(buf, NULL),
+				(void**)&nval);
+	if (res) {
+		/* key is prefixed with actual value */
+		return *--nval;
+	}
 
-	nval = malloc(sizeof(uint32_t) * s);
+	/* We save the key in nval and prefix it with the new ID. Note that
+	 * the prefix is hidden, we actually store "++nval" in the htable. */
+	nval = malloc(sizeof(uint32_t) * (s + 1));
 	if (!nval)
 		return sym;
 
+	++nval;
 	memcpy(nval, buf, s * sizeof(uint32_t));
+
 	nsym = tbl->next_id + 1;
 	/* Out of IDs; we actually have 2 Billion IDs so this seems
 	 * very unlikely but lets be safe here */
 	if (nsym <= tbl->next_id++)
 		goto err_id;
 
-	ret = shl_hashtable_insert(tbl->symbols, nval, (void*)(long)nsym);
+	/* store ID hidden before the key */
+	*(nval - 1) = nsym;
+
+	ret = shl_htable_insert(&tbl->symbols, nval, hash_ucs4(nval, NULL));
 	if (ret)
 		goto err_id;
 
@@ -294,7 +304,7 @@ tsm_symbol_t tsm_symbol_append(struct tsm_symbol_table *tbl,
 	return nsym;
 
 err_symbol:
-	shl_hashtable_remove(tbl->symbols, nval);
+	shl_htable_remove(&tbl->symbols, nval, hash_ucs4(nval, NULL), NULL);
 err_id:
 	--tbl->next_id;
 	free(nval);
