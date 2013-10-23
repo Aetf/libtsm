@@ -36,18 +36,4 @@
 
 #define SHL_EXPORT __attribute__((visibility("default")))
 
-static inline unsigned long shl_next_pow2(unsigned long num)
-{
-	unsigned int i;
-
-	if (!num)
-		return 0;
-
-	--num;
-	for (i = 1; i < sizeof(unsigned long) * CHAR_BIT; i <<= 1)
-		num = num | num >> i;
-
-	return num + 1;
-}
-
 #endif /* SHL_MISC_H */

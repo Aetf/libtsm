@@ -33,7 +33,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "shl_misc.h"
 
 struct shl_array {
 	size_t element_size;
@@ -83,6 +82,22 @@ static inline void shl_array_free(struct shl_array *arr)
 	free(arr);
 }
 
+/* Compute next higher power-of-2 of @v. Returns 4 in case v is 0. */
+static inline size_t shl_array_pow2(size_t v)
+{
+	size_t i;
+
+	if (!v)
+		return 4;
+
+	--v;
+
+	for (i = 1; i < 8 * sizeof(size_t); i *= 2)
+		v |= v >> i;
+
+	return ++v;
+}
+
 /* resize to length=size and zero out new array entries */
 static inline int shl_array_zresize(struct shl_array *arr, size_t size)
 {
@@ -93,7 +108,7 @@ static inline int shl_array_zresize(struct shl_array *arr, size_t size)
 		return -EINVAL;
 
 	if (size > arr->size) {
-		newsize = shl_next_pow2(size);
+		newsize = shl_array_pow2(size);
 		tmp = realloc(arr->data, arr->element_size * newsize);
 		if (!tmp)
 			return -ENOMEM;
