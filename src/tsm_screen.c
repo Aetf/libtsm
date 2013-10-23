@@ -890,6 +890,7 @@ void tsm_screen_reset(struct tsm_screen *con)
 	con->flags = 0;
 	con->margin_top = 0;
 	con->margin_bottom = con->size_y - 1;
+	con->lines = con->main_lines;
 
 	for (i = 0; i < con->size_x; ++i) {
 		if (i % 8 == 0)
