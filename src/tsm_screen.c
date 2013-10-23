@@ -654,7 +654,7 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 		      unsigned int y)
 {
 	struct line **cache;
-	unsigned int i, j, width, diff;
+	unsigned int i, j, width, diff, start;
 	int ret;
 	bool *tab_ruler;
 
@@ -738,20 +738,23 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 	con->age = con->age_cnt;
 
 	/* clear expansion/padding area */
+	start = x;
+	if (x > con->size_x)
+		start = con->size_x;
 	for (j = 0; j < con->line_num; ++j) {
+		/* main-lines may go into SB, so clear all cells */
 		i = 0;
 		if (j < con->size_y)
-			i = con->size_x;
+			i = start;
 
-		/* main-lines may go into SB, so clear all cells */
 		for ( ; i < con->main_lines[j]->size; ++i)
 			cell_init(con, &con->main_lines[j]->cells[i]);
 
+		/* alt-lines never go into SB, only clear visible cells */
 		i = 0;
 		if (j < con->size_y)
 			i = con->size_x;
 
-		/* alt-lines never go into SB, only clear visible cells */
 		for ( ; i < x; ++i)
 			cell_init(con, &con->alt_lines[j]->cells[i]);
 	}
