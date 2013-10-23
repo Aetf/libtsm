@@ -112,11 +112,8 @@ static unsigned int hash_ucs4(const void *key)
 	size_t i;
 	const uint32_t *ucs4 = key;
 
-	i = 0;
-	while (ucs4[i] <= TSM_UCS4_MAX) {
+	for (i = 0; ucs4[i] <= TSM_UCS4_MAX; ++i)
 		val = val * 33 + ucs4[i];
-		++i;
-	}
 
 	return val;
 }
@@ -128,19 +125,12 @@ static bool cmp_ucs4(const void *a, const void *b)
 
 	v1 = a;
 	v2 = b;
-	i = 0;
 
-	while (1) {
+	for (i = 0; ; ++i) {
 		if (v1[i] > TSM_UCS4_MAX && v2[i] > TSM_UCS4_MAX)
 			return true;
-		if (v1[i] > TSM_UCS4_MAX && v2[i] <= TSM_UCS4_MAX)
-			return false;
-		if (v1[i] <= TSM_UCS4_MAX && v2[i] > TSM_UCS4_MAX)
-			return false;
 		if (v1[i] != v2[i])
 			return false;
-
-		++i;
 	}
 }
 
