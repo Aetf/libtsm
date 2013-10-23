@@ -97,6 +97,7 @@ struct tsm_screen {
 	void *llog_data;
 	unsigned int opts;
 	unsigned int flags;
+	struct tsm_symbol_table *sym_table;
 
 	/* default attributes for new cells */
 	struct tsm_screen_attr def_attr;
@@ -493,6 +494,10 @@ int tsm_screen_new(struct tsm_screen **out, tsm_log_t log, void *log_data)
 	con->def_attr.fg = 255;
 	con->def_attr.fb = 255;
 
+	ret = tsm_symbol_table_new(&con->sym_table);
+	if (ret)
+		goto err_free;
+
 	ret = tsm_screen_resize(con, 80, 24);
 	if (ret)
 		goto err_free;
@@ -510,6 +515,7 @@ err_free:
 	free(con->main_lines);
 	free(con->alt_lines);
 	free(con->tab_ruler);
+	tsm_symbol_table_unref(con->sym_table);
 	free(con);
 	return ret;
 }
@@ -540,6 +546,7 @@ void tsm_screen_unref(struct tsm_screen *con)
 	free(con->main_lines);
 	free(con->alt_lines);
 	free(con->tab_ruler);
+	tsm_symbol_table_unref(con->sym_table);
 	free(con);
 }
 
@@ -1016,7 +1023,7 @@ void tsm_screen_write(struct tsm_screen *con, tsm_symbol_t ch,
 	if (!con)
 		return;
 
-	len = tsm_symbol_get_width(NULL, ch);
+	len = tsm_symbol_get_width(con->sym_table, ch);
 	if (!len)
 		return;
 
@@ -1912,7 +1919,7 @@ tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 					age = con->age;
 			}
 
-			ch = tsm_symbol_get(NULL, &cell->ch, &len);
+			ch = tsm_symbol_get(con->sym_table, &cell->ch, &len);
 			if (cell->ch == ' ' || cell->ch == 0)
 				len = 0;
 			ret = draw_cb(con, cell->ch, ch, len, cell->width,
