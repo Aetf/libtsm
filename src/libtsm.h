@@ -115,6 +115,7 @@ void tsm_utf8_mach_reset(struct tsm_utf8_mach *mach);
 /* screen objects */
 
 struct tsm_screen;
+typedef uint_fast32_t tsm_age_t;
 
 #define TSM_SCREEN_INSERT_MODE	0x01
 #define TSM_SCREEN_AUTO_WRAP	0x02
@@ -148,6 +149,7 @@ typedef int (*tsm_screen_draw_cb) (struct tsm_screen *con,
 				   unsigned int posx,
 				   unsigned int posy,
 				   const struct tsm_screen_attr *attr,
+				   tsm_age_t age,
 				   void *data);
 
 int tsm_screen_new(struct tsm_screen **out, tsm_log_t log, void *log_data);
@@ -231,8 +233,8 @@ void tsm_screen_selection_target(struct tsm_screen *con,
 				 unsigned int posy);
 int tsm_screen_selection_copy(struct tsm_screen *con, char **out);
 
-void tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
-		     void *data);
+tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
+			  void *data);
 
 /* available character sets */
 

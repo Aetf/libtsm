@@ -42,6 +42,18 @@
  * accessing the real screen data. However, terminal emulators should have no
  * reason to access the data directly. The screen API should provide everything
  * they need.
+ *
+ * AGEING:
+ * Each cell, line and screen has an "age" field. This field describes when it
+ * was changed the last time. After drawing a screen, the current screen age is
+ * returned. This allows users to skip drawing specific cells, if their
+ * framebuffer was already drawn with a newer age than a given cell.
+ * However, the screen-age might overflow. This is properly detected and causes
+ * drawing functions to return "0" as age. Users must reset all their
+ * framebuffer ages then. Otherwise, further drawing operations might
+ * incorrectly skip cells.
+ * Furthermore, if a cell has age "0", it means it _has_ to be drawn. No ageing
+ * information is available.
  */
 
 #include <errno.h>
@@ -59,6 +71,7 @@ struct cell {
 	tsm_symbol_t ch;
 	unsigned int width;
 	struct tsm_screen_attr attr;
+	tsm_age_t age;
 };
 
 struct line {
@@ -68,6 +81,7 @@ struct line {
 	unsigned int size;
 	struct cell *cells;
 	uint64_t sb_id;
+	tsm_age_t age;
 };
 
 #define SELECTION_TOP -1
@@ -87,6 +101,10 @@ struct tsm_screen {
 	/* default attributes for new cells */
 	struct tsm_screen_attr def_attr;
 
+	/* ageing */
+	tsm_age_t age_cnt;
+	unsigned int age_reset : 1;
+
 	/* current buffer */
 	unsigned int size_x;
 	unsigned int size_y;
@@ -96,6 +114,7 @@ struct tsm_screen {
 	struct line **lines;
 	struct line **main_lines;
 	struct line **alt_lines;
+	tsm_age_t age;
 
 	/* scroll-back buffer */
 	unsigned int sb_count;		/* number of lines in sb */
@@ -122,6 +141,7 @@ static void cell_init(struct tsm_screen *con, struct cell *cell)
 {
 	cell->ch = 0;
 	cell->width = 1;
+	cell->age = con->age_cnt;
 	memcpy(&cell->attr, &con->def_attr, sizeof(cell->attr));
 }
 
@@ -140,6 +160,7 @@ static int line_new(struct tsm_screen *con, struct line **out,
 	line->next = NULL;
 	line->prev = NULL;
 	line->size = width;
+	line->age = con->age_cnt;
 
 	line->cells = malloc(sizeof(struct cell) * width);
 	if (!line->cells) {
@@ -466,6 +487,8 @@ int tsm_screen_new(struct tsm_screen **out, tsm_log_t log, void *log_data)
 	con->ref = 1;
 	con->llog = log;
 	con->llog_data = log_data;
+	con->age_cnt = 1;
+	con->age = con->age_cnt;
 	con->def_attr.fr = 255;
 	con->def_attr.fg = 255;
 	con->def_attr.fb = 255;
@@ -1775,8 +1798,8 @@ int tsm_screen_selection_copy(struct tsm_screen *con, char **out)
 }
 
 SHL_EXPORT
-void tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
-		     void *data)
+tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
+			  void *data)
 {
 	unsigned int cur_x, cur_y;
 	unsigned int i, j, k;
@@ -1789,9 +1812,10 @@ void tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 	size_t len;
 	bool in_sel = false, sel_start = false, sel_end = false;
 	bool was_sel = false;
+	tsm_age_t age;
 
 	if (!con || !draw_cb)
-		return;
+		return 0;
 
 	cur_x = con->cursor_x;
 	if (con->cursor_x >= con->size_x)
@@ -1881,11 +1905,21 @@ void tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 				attr.inverse = !attr.inverse;
 			}
 
+			if (con->age_reset) {
+				age = 0;
+			} else {
+				age = cell->age;
+				if (line->age > age)
+					age = line->age;
+				if (con->age > age)
+					age = con->age;
+			}
+
 			ch = tsm_symbol_get(NULL, &cell->ch, &len);
 			if (cell->ch == ' ' || cell->ch == 0)
 				len = 0;
 			ret = draw_cb(con, cell->ch, ch, len, cell->width,
-				      j, i, &attr, data);
+				      j, i, &attr, age, data);
 			if (ret && warned++ < 3) {
 				llog_debug(con,
 					   "cannot draw glyph at %ux%u via text-renderer",
@@ -1902,8 +1936,15 @@ void tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 				if (!(con->flags & TSM_SCREEN_INVERSE))
 					attr.inverse = !attr.inverse;
 				draw_cb(con, 0, NULL, 0, 1,
-					cur_x, i, &attr, data);
+					cur_x, i, &attr, 0, data);
 			}
 		}
+	}
+
+	if (con->age_reset) {
+		con->age_reset = 0;
+		return 0;
+	} else {
+		return con->age_cnt;
 	}
 }
