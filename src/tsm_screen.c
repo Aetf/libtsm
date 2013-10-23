@@ -2005,7 +2005,6 @@ tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 	struct line *iter, *line = NULL;
 	struct cell *cell;
 	struct tsm_screen_attr attr;
-	bool cursor_done = false;
 	int ret, warned = 0;
 	const uint32_t *ch;
 	size_t len;
@@ -2085,12 +2084,9 @@ tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 				}
 			}
 
-			if (k == cur_y + 1 &&
-			    j == cur_x) {
-				cursor_done = true;
-				if (!(con->flags & TSM_SCREEN_HIDE_CURSOR))
-					attr.inverse = !attr.inverse;
-			}
+			if (k == cur_y + 1 && j == cur_x &&
+			    !(con->flags & TSM_SCREEN_HIDE_CURSOR))
+				attr.inverse = !attr.inverse;
 
 			/* TODO: do some more sophisticated inverse here. When
 			 * INVERSE mode is set, we should instead just select
@@ -2126,16 +2122,6 @@ tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 				if (warned == 3)
 					llog_debug(con,
 						   "suppressing further warnings during this rendering round");
-			}
-		}
-
-		if (k == cur_y + 1 && !cursor_done) {
-			cursor_done = true;
-			if (!(con->flags & TSM_SCREEN_HIDE_CURSOR)) {
-				if (!(con->flags & TSM_SCREEN_INVERSE))
-					attr.inverse = !attr.inverse;
-				draw_cb(con, 0, NULL, 0, 1,
-					cur_x, i, &attr, 0, data);
 			}
 		}
 	}
