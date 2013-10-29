@@ -6,7 +6,7 @@
 AC_PREREQ(2.68)
 
 AC_INIT([libtsm],
-        [1],
+        [3],
         [https://github.com/dvdhrm/libtsm/issues],
         [libtsm],
         [http://dvdhrm.github.io/libtsm])
