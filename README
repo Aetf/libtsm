@@ -18,7 +18,7 @@ as possible. This is why the TERM variable can be set to xterm-color256 with any
 TSM based terminal emulator.
 
 Website:
-  http://dvdhrm.github.io/libtsm
+  http://www.freedesktop.org/wiki/Software/kmscon/libtsm
 
 == Requirements ==
 
@@ -30,7 +30,7 @@ Website:
 == Download ==
 
 Released tarballs can be found at:
-  http://dvdhrm.github.io/libtsm
+  http://www.freedesktop.org/software/kmscon/releases
 
 == Install ==
 
@@ -44,16 +44,14 @@ Released tarballs can be found at:
 
 == Documentation ==
 
-  TODO
+  There is currently no API documentation available. You can have a look at the
+  example terminal-emulator "wlterm" available at:
+    http://www.freedesktop.org/wiki/Software/kmscon/wlterm
 
 == License ==
 
   This software is licensed under the terms of an MIT-like license. Please see
   ./COPYING for further information.
-
-== FAQ ==
-
-  Please see: http://dvdhrm.github.io/libtsm
 
 == Contact ==
 
