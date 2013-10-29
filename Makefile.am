@@ -65,8 +65,7 @@ AM_CFLAGS = \
 	-fno-strict-aliasing \
 	-fvisibility=hidden \
 	-ffunction-sections \
-	-fdata-sections \
-	-fstack-protector
+	-fdata-sections
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
 	-I $(srcdir)/src
