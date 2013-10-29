@@ -4,7 +4,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: libtsm
-Description: Terminal-emulator State Machine
+Description: @PACKAGE_DESCRIPTION@
 URL: @PACKAGE_URL@
 Version: @PACKAGE_VERSION@
 Libs: -L${libdir} -ltsm

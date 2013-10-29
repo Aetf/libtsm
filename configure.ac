@@ -21,6 +21,8 @@ AC_CANONICAL_HOST
 AM_INIT_AUTOMAKE([foreign 1.11 subdir-objects dist-xz no-dist-gzip tar-pax -Wall -Werror -Wno-portability])
 AM_SILENT_RULES([yes])
 
+AC_SUBST(PACKAGE_DESCRIPTION, ["terminal-emulator state machine"])
+
 #
 # Don't add a default "-g -O2" if CFLAGS wasn't specified. For debugging it is
 # often more convenient to have "-g -O0". You can still override it by
@@ -43,14 +45,8 @@ LT_PREREQ(2.2)
 LT_INIT
 
 #
-# pkg-config dependencies
-# This unconditionally checks for all dependencies even if they are disabled. We
-# later look whether all required depedencies are met and finish the
-# configuration. We group similar packages into one logical group here to avoid
-# having variables for each single library.
-# This, however, makes ./configure output very unintuitive error messages if a
-# package is not found so we must make sure we print more verbose messages
-# ourself.
+# We need xkbcommon for keysym definitions. If it's not found, we use our own
+# private copy of xkbcommon-keysyms.h.
 #
 
 PKG_CHECK_MODULES([XKBCOMMON], [xkbcommon],
@@ -61,6 +57,11 @@ if test "x$have_xkbcommon" = "xyes" ; then
 fi
 AM_CONDITIONAL([BUILD_HAVE_XKBCOMMON], [test "x$have_xkbcommon" = "xyes"])
 
+#
+# Test for "check" which we use for our test-suite. If not found, we disable
+# all tests.
+#
+
 PKG_CHECK_MODULES([CHECK], [check],
                   [have_check=yes], [have_check=no])
 AC_SUBST(CHECK_CFLAGS)
@@ -68,12 +69,12 @@ AC_SUBST(CHECK_LIBS)
 AM_CONDITIONAL([BUILD_HAVE_CHECK], [test "x$have_check" = "xyes"])
 
 #
-# Parse arguments
-# This parses all arguments that are given via "--enable-XY" or "--with-XY" and
-# saves the results in local variables.
+# debug mode
+# If --enable-debug is given, we enable several non-standard debug options. We
+# enable a lot of debug options by default, so this option is really only for
+# extended developer debug modes.
 #
 
-# debug
 AC_MSG_CHECKING([whether to build with debugging on])
 AC_ARG_ENABLE([debug],
               [AS_HELP_STRING([--enable-debug],
@@ -82,6 +83,7 @@ if test "x$enable_debug" = "x" ; then
         enable_debug="yes (default)"
 fi
 AC_MSG_RESULT([$enable_debug])
+
 if test "x${enable_debug% *}" = "xyes" ; then
         enable_debug="yes"
         AC_DEFINE([BUILD_ENABLE_DEBUG], [1], [Enable debug mode])
@@ -92,7 +94,11 @@ fi
 AM_CONDITIONAL([BUILD_ENABLE_DEBUG],
                [test "x$enable_debug" = "xyes"])
 
-# optimizations
+#
+# Enable gcc compiler optimizations. We enable them by default but allow
+# disabling them for better backtraces during debugging.
+#
+
 AC_MSG_CHECKING([whether to enable code optimizations])
 AC_ARG_ENABLE([optimizations],
               [AS_HELP_STRING([--disable-optimizations],
@@ -101,6 +107,7 @@ if test "x$enable_optimizations" = "x" ; then
         enable_optimizations="yes (default)"
 fi
 AC_MSG_RESULT([$enable_optimizations])
+
 if test "x${enable_optimizations% *}" = "xyes" ; then
         enable_optimizations="yes"
 else
