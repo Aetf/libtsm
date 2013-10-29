@@ -30,6 +30,7 @@ include_HEADERS =
 EXTRA_DIST = \
 	README \
 	COPYING \
+	LICENSE_htable \
 	NEWS \
 	docs/libtsm.pc.in \
 	docs/libtsm.sym
