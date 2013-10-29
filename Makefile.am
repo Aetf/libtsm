@@ -7,7 +7,7 @@
 # Library Version Numbers
 #
 
-LIBTSM_CURRENT = 1
+LIBTSM_CURRENT = 3
 LIBTSM_REVISION = 0
 LIBTSM_AGE = 0
 

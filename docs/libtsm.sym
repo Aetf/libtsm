@@ -26,9 +26,18 @@
 LIBTSM_1 {
 global:
 	tsm_ucs4_get_width;
+local:
+	*;
+};
+
+LIBTSM_2 {
+global:
 	tsm_ucs4_to_utf8;
 	tsm_ucs4_to_utf8_alloc;
+} LIBTSM_1;
 
+LIBTSM_3 {
+global:
 	tsm_screen_new;
 	tsm_screen_ref;
 	tsm_screen_unref;
@@ -102,6 +111,4 @@ global:
 	tsm_vte_hard_reset;
 	tsm_vte_input;
 	tsm_vte_handle_keyboard;
-local:
-	*;
-};
+} LIBTSM_2;
