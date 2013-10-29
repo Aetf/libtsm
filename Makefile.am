@@ -108,21 +108,14 @@ libshl_la_LIBADD = $(AM_LIBADD)
 #
 
 lib_LTLIBRARIES += libtsm.la
-include_HEADERS += \
-	src/tsm_screen.h \
-	src/tsm_unicode.h \
-	src/tsm_vte.h \
-	src/libtsm.h
+include_HEADERS += src/libtsm.h
 pkgconfig_DATA += docs/libtsm.pc
 
 libtsm_la_SOURCES = \
 	src/libtsm.h \
 	src/libtsm_int.h \
-	src/tsm_unicode.h \
 	src/tsm_unicode.c \
-	src/tsm_screen.h \
 	src/tsm_screen.c \
-	src/tsm_vte.h \
 	src/tsm_vte.c \
 	src/tsm_vte_charsets.c \
 	external/wcwidth.h \
