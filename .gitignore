@@ -26,4 +26,5 @@ m4/
 stamp-h1
 test-suite.log
 test_htable
+test_symbol
 test_valgrind

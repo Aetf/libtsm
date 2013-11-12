@@ -109,6 +109,7 @@ libshl_la_LIBADD = $(AM_LIBADD)
 #
 
 lib_LTLIBRARIES += libtsm.la
+noinst_LTLIBRARIES += libtsm_test.la
 include_HEADERS += src/libtsm.h
 pkgconfig_DATA += docs/libtsm.pc
 
@@ -122,17 +123,26 @@ libtsm_la_SOURCES = \
 	external/wcwidth.h \
 	external/wcwidth.c \
 	external/xkbcommon-keysyms.h
+libtsm_test_la_SOURCES = $(libtsm_la_SOURCES)
 
 libtsm_la_CPPFLAGS = $(AM_CPPFLAGS)
+libtsm_test_la_CPPFLAGS = $(AM_CPPFLAGS)
+
 libtsm_la_LIBADD = libshl.la
+libtsm_test_la_LIBADD = libshl.la
+
 EXTRA_libtsm_la_DEPENDENCIES = $(top_srcdir)/docs/libtsm.sym
+
 libtsm_la_LDFLAGS = \
 	$(AM_LDFLAGS) \
 	-version-info $(LIBTSM_CURRENT):$(LIBTSM_REVISION):$(LIBTSM_AGE) \
 	-Wl,--version-script="$(top_srcdir)/docs/libtsm.sym"
+libtsm_test_la_LDFLAGS = \
+	$(AM_LDFLAGS)
 
 if BUILD_HAVE_XKBCOMMON
 libtsm_la_CPPFLAGS += $(XKBCOMMON_CFLAGS)
+libtsm_test_la_CPPFLAGS += $(XKBCOMMON_CFLAGS)
 endif
 
 #
@@ -148,18 +158,22 @@ endif
 if BUILD_HAVE_CHECK
 check_PROGRAMS += \
 	test_htable \
+	test_symbol \
 	test_valgrind
 TESTS += \
 	test_htable \
+	test_symbol \
 	test_valgrind
 MEMTESTS += \
-	test_htable
+	test_htable \
+	test_symbol
 endif
 
 test_sources = \
 	test/test_common.h
 test_libs = \
 	libshl.la \
+	libtsm_test.la \
 	$(CHECK_LIBS)
 test_cflags = \
 	$(AM_CPPFLAGS) \
@@ -171,6 +185,11 @@ test_htable_SOURCES = test/test_htable.c $(test_sources)
 test_htable_CPPFLAGS = $(test_cflags)
 test_htable_LDADD = $(test_libs)
 test_htable_LDFLAGS = $(test_lflags)
+
+test_symbol_SOURCES = test/test_symbol.c $(test_sources)
+test_symbol_CPPFLAGS = $(test_cflags)
+test_symbol_LDADD = $(test_libs)
+test_symbol_LDFLAGS = $(test_lflags)
 
 test_valgrind_SOURCES = test/test_valgrind.c $(test_sources)
 test_valgrind_CPPFLAGS = $(test_cflags)
