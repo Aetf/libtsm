@@ -110,7 +110,7 @@ static void move_cursor(struct tsm_screen *con, unsigned int x, unsigned int y)
 	c->age = con->age_cnt;
 }
 
-static void cell_init(struct tsm_screen *con, struct cell *cell)
+void screen_cell_init(struct tsm_screen *con, struct cell *cell)
 {
 	cell->ch = 0;
 	cell->width = 1;
@@ -142,7 +142,7 @@ static int line_new(struct tsm_screen *con, struct line **out,
 	}
 
 	for (i = 0; i < width; ++i)
-		cell_init(con, &line->cells[i]);
+		screen_cell_init(con, &line->cells[i]);
 
 	*out = line;
 	return 0;
@@ -170,7 +170,7 @@ static int line_resize(struct tsm_screen *con, struct line *line,
 		line->cells = tmp;
 
 		while (line->size < width) {
-			cell_init(con, &line->cells[line->size]);
+			screen_cell_init(con, &line->cells[line->size]);
 			++line->size;
 		}
 	}
@@ -293,7 +293,7 @@ static void screen_scroll_up(struct tsm_screen *con, unsigned int num)
 		} else {
 			cache[i] = con->lines[pos];
 			for (j = 0; j < con->size_x; ++j)
-				cell_init(con, &cache[i]->cells[j]);
+				screen_cell_init(con, &cache[i]->cells[j]);
 		}
 	}
 
@@ -352,7 +352,7 @@ static void screen_scroll_down(struct tsm_screen *con, unsigned int num)
 	for (i = 0; i < num; ++i) {
 		cache[i] = con->lines[con->margin_bottom - i];
 		for (j = 0; j < con->size_x; ++j)
-			cell_init(con, &cache[i]->cells[j]);
+			screen_cell_init(con, &cache[i]->cells[j]);
 	}
 
 	if (num < max) {
@@ -440,7 +440,7 @@ static void screen_erase_region(struct tsm_screen *con,
 			if (protect && line->cells[x_from].attr.protect)
 				continue;
 
-			cell_init(con, &line->cells[x_from]);
+			screen_cell_init(con, &line->cells[x_from]);
 		}
 		x_from = 0;
 	}
@@ -678,7 +678,7 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 			i = start;
 
 		for ( ; i < con->main_lines[j]->size; ++i)
-			cell_init(con, &con->main_lines[j]->cells[i]);
+			screen_cell_init(con, &con->main_lines[j]->cells[i]);
 
 		/* alt-lines never go into SB, only clear visible cells */
 		i = 0;
@@ -686,7 +686,7 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 			i = con->size_x;
 
 		for ( ; i < x; ++i)
-			cell_init(con, &con->alt_lines[j]->cells[i]);
+			screen_cell_init(con, &con->alt_lines[j]->cells[i]);
 	}
 
 	/* xterm destroys margins on resize, so do we */
@@ -1357,7 +1357,7 @@ void tsm_screen_insert_lines(struct tsm_screen *con, unsigned int num)
 	for (i = 0; i < num; ++i) {
 		cache[i] = con->lines[con->margin_bottom - i];
 		for (j = 0; j < con->size_x; ++j)
-			cell_init(con, &cache[i]->cells[j]);
+			screen_cell_init(con, &cache[i]->cells[j]);
 	}
 
 	if (num < max) {
@@ -1397,7 +1397,7 @@ void tsm_screen_delete_lines(struct tsm_screen *con, unsigned int num)
 	for (i = 0; i < num; ++i) {
 		cache[i] = con->lines[con->cursor_y + i];
 		for (j = 0; j < con->size_x; ++j)
-			cell_init(con, &cache[i]->cells[j]);
+			screen_cell_init(con, &cache[i]->cells[j]);
 	}
 
 	if (num < max) {
@@ -1442,7 +1442,7 @@ void tsm_screen_insert_chars(struct tsm_screen *con, unsigned int num)
 			mv * sizeof(*cells));
 
 	for (i = 0; i < num; ++i)
-		cell_init(con, &cells[con->cursor_x + i]);
+		screen_cell_init(con, &cells[con->cursor_x + i]);
 }
 
 SHL_EXPORT
@@ -1475,7 +1475,7 @@ void tsm_screen_delete_chars(struct tsm_screen *con, unsigned int num)
 			mv * sizeof(*cells));
 
 	for (i = 0; i < num; ++i)
-		cell_init(con, &cells[con->cursor_x + mv + i]);
+		screen_cell_init(con, &cells[con->cursor_x + mv + i]);
 }
 
 SHL_EXPORT
@@ -1603,148 +1603,4 @@ void tsm_screen_erase_screen(struct tsm_screen *con, bool protect)
 
 	screen_erase_region(con, 0, 0, con->size_x - 1, con->size_y - 1,
 			     protect);
-}
-
-SHL_EXPORT
-tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
-			  void *data)
-{
-	unsigned int cur_x, cur_y;
-	unsigned int i, j, k;
-	struct line *iter, *line = NULL;
-	struct cell *cell, empty;
-	struct tsm_screen_attr attr;
-	int ret, warned = 0;
-	const uint32_t *ch;
-	size_t len;
-	bool in_sel = false, sel_start = false, sel_end = false;
-	bool was_sel = false;
-	tsm_age_t age;
-
-	if (!con || !draw_cb)
-		return 0;
-
-	cell_init(con, &empty);
-
-	cur_x = con->cursor_x;
-	if (con->cursor_x >= con->size_x)
-		cur_x = con->size_x - 1;
-	cur_y = con->cursor_y;
-	if (con->cursor_y >= con->size_y)
-		cur_y = con->size_y - 1;
-
-	/* push each character into rendering pipeline */
-
-	iter = con->sb_pos;
-	k = 0;
-
-	if (con->sel_active) {
-		if (!con->sel_start.line && con->sel_start.y == SELECTION_TOP)
-			in_sel = !in_sel;
-		if (!con->sel_end.line && con->sel_end.y == SELECTION_TOP)
-			in_sel = !in_sel;
-
-		if (con->sel_start.line &&
-		    (!iter || con->sel_start.line->sb_id < iter->sb_id))
-			in_sel = !in_sel;
-		if (con->sel_end.line &&
-		    (!iter || con->sel_end.line->sb_id < iter->sb_id))
-			in_sel = !in_sel;
-	}
-
-	for (i = 0; i < con->size_y; ++i) {
-		if (iter) {
-			line = iter;
-			iter = iter->next;
-		} else {
-			line = con->lines[k];
-			k++;
-		}
-
-		if (con->sel_active) {
-			if (con->sel_start.line == line ||
-			    (!con->sel_start.line &&
-			     con->sel_start.y == k - 1))
-				sel_start = true;
-			else
-				sel_start = false;
-			if (con->sel_end.line == line ||
-			    (!con->sel_end.line &&
-			     con->sel_end.y == k - 1))
-				sel_end = true;
-			else
-				sel_end = false;
-
-			was_sel = false;
-		}
-
-		for (j = 0; j < con->size_x; ++j) {
-			if (j < line->size)
-				cell = &line->cells[j];
-			else
-				cell = &empty;
-
-			memcpy(&attr, &cell->attr, sizeof(attr));
-
-			if (con->sel_active) {
-				if (sel_start &&
-				    j == con->sel_start.x) {
-					was_sel = in_sel;
-					in_sel = !in_sel;
-				}
-				if (sel_end &&
-				    j == con->sel_end.x) {
-					was_sel = in_sel;
-					in_sel = !in_sel;
-				}
-			}
-
-			if (k == cur_y + 1 && j == cur_x &&
-			    !(con->flags & TSM_SCREEN_HIDE_CURSOR))
-				attr.inverse = !attr.inverse;
-
-			/* TODO: do some more sophisticated inverse here. When
-			 * INVERSE mode is set, we should instead just select
-			 * inverse colors instead of switching background and
-			 * foreground */
-			if (con->flags & TSM_SCREEN_INVERSE)
-				attr.inverse = !attr.inverse;
-
-			if (in_sel || was_sel) {
-				was_sel = false;
-				attr.inverse = !attr.inverse;
-			}
-
-			if (con->age_reset) {
-				age = 0;
-			} else {
-				age = cell->age;
-				if (line->age > age)
-					age = line->age;
-				if (con->age > age)
-					age = con->age;
-			}
-
-			ch = tsm_symbol_get(con->sym_table, &cell->ch, &len);
-			if (cell->ch == ' ' || cell->ch == 0)
-				len = 0;
-			ret = draw_cb(con, cell->ch, ch, len, cell->width,
-				      j, i, &attr, age, data);
-			if (ret && warned++ < 3) {
-				llog_debug(con,
-					   "cannot draw glyph at %ux%u via text-renderer",
-					   j, i);
-				if (warned == 3)
-					llog_debug(con,
-						   "suppressing further warnings during this rendering round");
-			}
-		}
-	}
-
-	if (con->age_reset) {
-		con->age_reset = 0;
-		return 0;
-	} else {
-		return con->age_cnt;
-	}
 }

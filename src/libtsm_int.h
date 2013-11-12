@@ -149,6 +149,8 @@ struct tsm_screen {
 	struct selection_pos sel_end;
 };
 
+void screen_cell_init(struct tsm_screen *con, struct cell *cell);
+
 void tsm_screen_set_opts(struct tsm_screen *scr, unsigned int opts);
 void tsm_screen_reset_opts(struct tsm_screen *scr, unsigned int opts);
 unsigned int tsm_screen_get_opts(struct tsm_screen *scr);
