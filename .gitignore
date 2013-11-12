@@ -1,6 +1,7 @@
 *.la
 *.lo
 *.log
+*.memlog
 *.o
 *.swp
 *.tar.xz
@@ -25,3 +26,4 @@ m4/
 stamp-h1
 test-suite.log
 test_htable
+test_valgrind

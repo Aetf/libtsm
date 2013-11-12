@@ -40,6 +40,7 @@ pkgconfig_DATA =
 TPHONY =
 
 TESTS =
+MEMTESTS =
 check_PROGRAMS =
 lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
@@ -136,12 +137,22 @@ endif
 
 #
 # Tests
+# We add a separate "memcheck" target which runs valgrind on all tests in
+# MEMTESTS. Note that we fail if _any_ leak is detected by valgrind. Thus, you
+# need to have valgrind installed and libcheck running properly (without leaks)
+# to make memcheck succeed.
+# A separate memcheck-verify actually runs a faulty test and verifies the
+# valgrind tests work properly.
 #
 
 if BUILD_HAVE_CHECK
 check_PROGRAMS += \
-	test_htable
+	test_htable \
+	test_valgrind
 TESTS += \
+	test_htable \
+	test_valgrind
+MEMTESTS += \
 	test_htable
 endif
 
@@ -160,6 +171,30 @@ test_htable_SOURCES = test/test_htable.c $(test_sources)
 test_htable_CPPFLAGS = $(test_cflags)
 test_htable_LDADD = $(test_libs)
 test_htable_LDFLAGS = $(test_lflags)
+
+test_valgrind_SOURCES = test/test_valgrind.c $(test_sources)
+test_valgrind_CPPFLAGS = $(test_cflags)
+test_valgrind_LDADD = $(test_libs)
+test_valgrind_LDFLAGS = $(test_lflags)
+
+VALGRIND = CK_FORK=no valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --leak-resolution=high --error-exitcode=1
+
+# verify that test_valgrind actually leaks data
+memcheck-verify: check
+	$(AM_V_GEN)$(VALGRIND) --log-file=/dev/null ./test_valgrind >/dev/null ; test 1 = $$?
+
+TPHONY += memcheck-verify
+
+# run memcheck tests via valgrind
+memcheck: memcheck-verify
+	$(AM_V_GEN)for i in $(MEMTESTS) ; do \
+		$(VALGRIND) --log-file=$(top_builddir)/$$i.memlog \
+			$(top_builddir)/$$i >/dev/null || (echo "memcheck failed on: $$i" ; exit 1) ; \
+	done
+
+TPHONY += memcheck memcheck-verify
+
+distcheck-hook: memcheck
 
 #
 # Phony targets
