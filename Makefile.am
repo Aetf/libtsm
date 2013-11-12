@@ -118,6 +118,7 @@ libtsm_la_SOURCES = \
 	src/libtsm_int.h \
 	src/tsm_unicode.c \
 	src/tsm_screen.c \
+	src/tsm_selection.c \
 	src/tsm_vte.c \
 	src/tsm_vte_charsets.c \
 	external/wcwidth.h \
