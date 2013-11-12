@@ -460,6 +460,15 @@ int tsm_vte_set_palette(struct tsm_vte *vte, const char *palette)
 	return 0;
 }
 
+SHL_EXPORT
+void tsm_vte_get_def_attr(struct tsm_vte *vte, struct tsm_screen_attr *out)
+{
+	if (!vte || !out)
+		return;
+
+	memcpy(out, &vte->def_attr, sizeof(*out));
+}
+
 /*
  * Write raw byte-stream to pty.
  * When writing data to the client we must make sure that we send the correct

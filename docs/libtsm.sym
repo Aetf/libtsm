@@ -106,6 +106,7 @@ global:
 	tsm_vte_unref;
 
 	tsm_vte_set_palette;
+	tsm_vte_get_def_attr;
 
 	tsm_vte_reset;
 	tsm_vte_hard_reset;
