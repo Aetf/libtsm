@@ -26,7 +26,11 @@
 #ifndef TSM_LIBTSM_INT_H
 #define TSM_LIBTSM_INT_H
 
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdlib.h>
+#include "libtsm.h"
+#include "shl_llog.h"
 
 #define SHL_EXPORT __attribute__((visibility("default")))
 
@@ -72,6 +76,78 @@ uint32_t tsm_utf8_mach_get(struct tsm_utf8_mach *mach);
 void tsm_utf8_mach_reset(struct tsm_utf8_mach *mach);
 
 /* TSM screen */
+
+struct cell {
+	tsm_symbol_t ch;		/* stored character */
+	unsigned int width;		/* character width */
+	struct tsm_screen_attr attr;	/* cell attributes */
+	tsm_age_t age;			/* age of the single cell */
+};
+
+struct line {
+	struct line *next;		/* next line (NULL if not sb) */
+	struct line *prev;		/* prev line (NULL if not sb) */
+
+	unsigned int size;		/* real width */
+	struct cell *cells;		/* actuall cells */
+	uint64_t sb_id;			/* sb ID */
+	tsm_age_t age;			/* age of the whole line */
+};
+
+#define SELECTION_TOP -1
+struct selection_pos {
+	struct line *line;
+	unsigned int x;
+	int y;
+};
+
+struct tsm_screen {
+	size_t ref;
+	llog_submit_t llog;
+	void *llog_data;
+	unsigned int opts;
+	unsigned int flags;
+	struct tsm_symbol_table *sym_table;
+
+	/* default attributes for new cells */
+	struct tsm_screen_attr def_attr;
+
+	/* ageing */
+	tsm_age_t age_cnt;		/* current age counter */
+	unsigned int age_reset : 1;	/* age-overflow flag */
+
+	/* current buffer */
+	unsigned int size_x;		/* width of screen */
+	unsigned int size_y;		/* height of screen */
+	unsigned int margin_top;	/* top-margin index */
+	unsigned int margin_bottom;	/* bottom-margin index */
+	unsigned int line_num;		/* real number of allocated lines */
+	struct line **lines;		/* active lines; copy of main/alt */
+	struct line **main_lines;	/* real main lines */
+	struct line **alt_lines;	/* real alternative lines */
+	tsm_age_t age;			/* whole screen age */
+
+	/* scroll-back buffer */
+	unsigned int sb_count;		/* number of lines in sb */
+	struct line *sb_first;		/* first line; was moved first */
+	struct line *sb_last;		/* last line; was moved last*/
+	unsigned int sb_max;		/* max-limit of lines in sb */
+	struct line *sb_pos;		/* current position in sb or NULL */
+	uint64_t sb_last_id;		/* last id given to sb-line */
+
+	/* cursor: positions are always in-bound, but cursor_x might be
+	 * bigger than size_x if new-line is pending */
+	unsigned int cursor_x;		/* current cursor x-pos */
+	unsigned int cursor_y;		/* current cursor y-pos */
+
+	/* tab ruler */
+	bool *tab_ruler;		/* tab-flag for all cells of one row */
+
+	/* selection */
+	bool sel_active;
+	struct selection_pos sel_start;
+	struct selection_pos sel_end;
+};
 
 void tsm_screen_set_opts(struct tsm_screen *scr, unsigned int opts);
 void tsm_screen_reset_opts(struct tsm_screen *scr, unsigned int opts);
