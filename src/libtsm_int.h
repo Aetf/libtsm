@@ -153,6 +153,14 @@ void tsm_screen_set_opts(struct tsm_screen *scr, unsigned int opts);
 void tsm_screen_reset_opts(struct tsm_screen *scr, unsigned int opts);
 unsigned int tsm_screen_get_opts(struct tsm_screen *scr);
 
+static inline void screen_inc_age(struct tsm_screen *con)
+{
+	if (!++con->age_cnt) {
+		con->age_reset = 1;
+		++con->age_cnt;
+	}
+}
+
 /* available character sets */
 
 typedef tsm_symbol_t tsm_vte_charset[96];
