@@ -1,6 +1,7 @@
 /*
- * Library Log/Debug Interface
- * Copyright (c) 2012-2013 David Herrmann <dh.herrmann@gmail.com>
+ * SHL - Library Log/Debug Interface
+ *
+ * Copyright (c) 2010-2013 David Herrmann <dh.herrmann@gmail.com>
  * Dedicated to the Public Domain
  */
 
@@ -51,9 +52,10 @@
  * to add context to the logger.
  */
 
-#ifndef SHL_LLOG_H_INCLUDED
-#define SHL_LLOG_H_INCLUDED
+#ifndef SHL_LLOG_H
+#define SHL_LLOG_H
 
+#include <errno.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -90,10 +92,12 @@ void llog_format(llog_submit_t llog,
 		 const char *format,
 		 ...)
 {
+	int saved_errno = errno;
 	va_list list;
 
 	if (llog) {
 		va_start(list, format);
+		errno = saved_errno;
 		llog(data, file, line, func, subs, sev, format, list);
 		va_end(list);
 	}
@@ -128,10 +132,9 @@ void llog_dummyf(llog_submit_t llog, void *data, unsigned int sev,
 
 /*
  * Helpers
- * They pick-up all the default values and submit the message to the
- * llog-subsystem. The llog_debug() function produces zero-code if
- * BUILD_ENABLE_DEBUG is not defined. Therefore, it can be heavily used for
- * debugging and will not have any side-effects.
+ * They pick up all the default values and submit the message to the
+ * llog-subsystem. The llog_debug() function will discard the message unless
+ * BUILD_ENABLE_DEBUG is defined.
  */
 
 #ifdef BUILD_ENABLE_DEBUG
@@ -175,11 +178,6 @@ void llog_dummyf(llog_submit_t llog, void *data, unsigned int sev,
 #define llog_dfatal(obj, data, format, ...) \
 	llog_dprintf((obj), (data), LLOG_FATAL, (format), ##__VA_ARGS__)
 
-#define llog_dbg llog_debug
-#define llog_warn llog_warning
-#define llog_err llog_error
-#define llog_crit llog_critical
-
 /*
  * Default log messages
  * These macros can be used to produce default log messages. You can use them
@@ -193,7 +191,7 @@ void llog_dummyf(llog_submit_t llog, void *data, unsigned int sev,
  */
 
 #define llog_dEINVAL(obj, data) \
-	(llog_ddebug((obj), (data), "invalid arguments"), -EINVAL)
+	(llog_derror((obj), (data), "invalid arguments"), -EINVAL)
 #define llog_EINVAL(obj) \
 	(llog_dEINVAL((obj)->llog, (obj)->llog_data))
 #define llog_vEINVAL(obj) \
@@ -202,7 +200,7 @@ void llog_dummyf(llog_submit_t llog, void *data, unsigned int sev,
 	((void)llog_dEINVAL((obj), (data)))
 
 #define llog_dEFAULT(obj, data) \
-	(llog_ddebug((obj), (data), "operation failed"), -EFAULT)
+	(llog_derror((obj), (data), "internal operation failed"), -EFAULT)
 #define llog_EFAULT(obj) \
 	(llog_dEFAULT((obj)->llog, (obj)->llog_data))
 #define llog_vEFAULT(obj) \
@@ -211,7 +209,7 @@ void llog_dummyf(llog_submit_t llog, void *data, unsigned int sev,
 	((void)llog_dEFAULT((obj), (data)))
 
 #define llog_dENOMEM(obj, data) \
-	(llog_ddebug((obj), (data), "memory allocation failed"), -ENOMEM)
+	(llog_derror((obj), (data), "out of memory"), -ENOMEM)
 #define llog_ENOMEM(obj) \
 	(llog_dENOMEM((obj)->llog, (obj)->llog_data))
 #define llog_vENOMEM(obj) \
@@ -219,4 +217,31 @@ void llog_dummyf(llog_submit_t llog, void *data, unsigned int sev,
 #define llog_vdENOMEM(obj, data) \
 	((void)llog_dENOMEM((obj), (data)))
 
-#endif /* SHL_LLOG_H_INCLUDED */
+#define llog_dEPIPE(obj, data) \
+	(llog_derror((obj), (data), "fd closed unexpectedly"), -EPIPE)
+#define llog_EPIPE(obj) \
+	(llog_dEPIPE((obj)->llog, (obj)->llog_data))
+#define llog_vEPIPE(obj) \
+	((void)llog_EPIPE(obj))
+#define llog_vdEPIPE(obj, data) \
+	((void)llog_dEPIPE((obj), (data)))
+
+#define llog_dERRNO(obj, data) \
+	(llog_derror((obj), (data), "syscall failed (%d): %m", errno), -errno)
+#define llog_ERRNO(obj) \
+	(llog_dERRNO((obj)->llog, (obj)->llog_data))
+#define llog_vERRNO(obj) \
+	((void)llog_ERRNO(obj))
+#define llog_vdERRNO(obj, data) \
+	((void)llog_dERRNO((obj), (data)))
+
+#define llog_dERR(obj, data, _r) \
+	(errno = -(_r), llog_derror((obj), (data), "syscall failed (%d): %m", (_r)), (_r))
+#define llog_ERR(obj, _r) \
+	(llog_dERR((obj)->llog, (obj)->llog_data, (_r)))
+#define llog_vERR(obj, _r) \
+	((void)llog_ERR((obj), (_r)))
+#define llog_vdERR(obj, data, _r) \
+	((void)llog_dERR((obj), (data), (_r)))
+
+#endif /* SHL_LLOG_H */

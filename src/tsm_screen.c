@@ -462,7 +462,7 @@ static void screen_write(struct tsm_screen *con, unsigned int x,
 		return;
 
 	if (x >= con->size_x || y >= con->size_y) {
-		llog_warn(con, "writing beyond buffer boundary");
+		llog_warning(con, "writing beyond buffer boundary");
 		return;
 	}
 

@@ -1824,7 +1824,7 @@ static void do_action(struct tsm_vte *vte, uint32_t data, int action)
 		case ACTION_OSC_END:
 			break;
 		default:
-			llog_warn(vte, "invalid action %d", action);
+			llog_warning(vte, "invalid action %d", action);
 	}
 }
 
@@ -2207,7 +2207,7 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	}
 
-	llog_warn(vte, "unhandled input %u in state %d", raw, vte->state);
+	llog_warning(vte, "unhandled input %u in state %d", raw, vte->state);
 }
 
 SHL_EXPORT
