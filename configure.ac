@@ -117,6 +117,25 @@ AM_CONDITIONAL([BUILD_ENABLE_OPTIMIZATIONS],
                [test "x$enable_optimizations" = "xyes"])
 
 #
+# Check which linker is used
+#
+
+AM_CONDITIONAL([BUILD_HAVE_GNU_LD],
+               [test "x$with_gnu_ld" = "xyes"])
+
+#
+# Detect darwin targets
+#
+
+case "$host_os" in
+  darwin*)
+    $is_darwin = "xyes";;
+esac
+
+AM_CONDITIONAL([BUILD_IS_DARWIN],
+               [test "x$is_darwin" = "xyes"])
+
+#
 # Makefile vars
 # After everything is configured, we create all makefiles.
 #
@@ -137,6 +156,7 @@ AC_MSG_NOTICE([Build configuration:
           exec-prefix: $exec_prefix
                libdir: $libdir
            includedir: $includedir
+              host-os: $host_os
 
   Miscellaneous Options:
                 debug: $enable_debug

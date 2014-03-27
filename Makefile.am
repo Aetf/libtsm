@@ -70,11 +70,22 @@ AM_CFLAGS = \
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
 	-I $(srcdir)/src
-AM_LDFLAGS = \
+AM_LDFLAGS =
+
+if BUILD_HAVE_GNU_LD
+AM_LDFLAGS += \
 	-Wl,--as-needed \
 	-Wl,--gc-sections \
 	-Wl,-z,relro \
 	-Wl,-z,now
+else
+if BUILD_IS_DARWIN
+AM_LDFLAGS += \
+	-Wl,-dead_strip \
+	-Wl,-dead_strip_dylibs \
+	-Wl,-bind_at_load
+endif
+endif
 
 if BUILD_ENABLE_DEBUG
 AM_CFLAGS += -g
@@ -137,8 +148,13 @@ EXTRA_libtsm_la_DEPENDENCIES = $(top_srcdir)/docs/libtsm.sym
 
 libtsm_la_LDFLAGS = \
 	$(AM_LDFLAGS) \
-	-version-info $(LIBTSM_CURRENT):$(LIBTSM_REVISION):$(LIBTSM_AGE) \
+	-version-info $(LIBTSM_CURRENT):$(LIBTSM_REVISION):$(LIBTSM_AGE)
+
+if BUILD_HAVE_GNU_LD
+libtsm_la_LDFLAGS += \
 	-Wl,--version-script="$(top_srcdir)/docs/libtsm.sym"
+endif
+
 libtsm_test_la_LDFLAGS = \
 	$(AM_LDFLAGS)
 
