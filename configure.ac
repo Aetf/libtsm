@@ -10,7 +10,7 @@ AC_INIT([libtsm],
         [http://bugs.freedesktop.org/enter_bug.cgi?product=kmscon],
         [libtsm],
         [http://www.freedesktop.org/wiki/Software/kmscon/libtsm])
-AC_CONFIG_SRCDIR([src/tsm_vte.c])
+AC_CONFIG_SRCDIR([src/tsm/libtsm.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_HEADER(config.h)
@@ -141,7 +141,7 @@ AM_CONDITIONAL([BUILD_IS_DARWIN],
 #
 
 AC_CONFIG_FILES([Makefile
-                 docs/libtsm.pc])
+                 src/tsm/libtsm.pc])
 AC_OUTPUT
 
 #

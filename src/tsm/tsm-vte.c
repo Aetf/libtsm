@@ -50,7 +50,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libtsm.h"
-#include "libtsm_int.h"
+#include "libtsm-int.h"
 #include "shl_llog.h"
 
 #ifdef BUILD_HAVE_XKBCOMMON
@@ -59,7 +59,7 @@
 #  include "external/xkbcommon-keysyms.h"
 #endif
 
-#define LLOG_SUBSYSTEM "tsm_vte"
+#define LLOG_SUBSYSTEM "tsm-vte"
 
 /* Input parser states */
 enum parser_state {

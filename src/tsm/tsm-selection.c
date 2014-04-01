@@ -56,10 +56,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libtsm.h"
-#include "libtsm_int.h"
+#include "libtsm-int.h"
 #include "shl_llog.h"
 
-#define LLOG_SUBSYSTEM "tsm_selection"
+#define LLOG_SUBSYSTEM "tsm-selection"
 
 static void selection_set(struct tsm_screen *con, struct selection_pos *sel,
 			  unsigned int x, unsigned int y)

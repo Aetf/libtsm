@@ -62,10 +62,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libtsm.h"
-#include "libtsm_int.h"
+#include "libtsm-int.h"
 #include "shl_llog.h"
 
-#define LLOG_SUBSYSTEM "tsm_screen"
+#define LLOG_SUBSYSTEM "tsm-screen"
 
 static struct cell *get_cursor_cell(struct tsm_screen *con)
 {

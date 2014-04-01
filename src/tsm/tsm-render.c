@@ -36,10 +36,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include "libtsm.h"
-#include "libtsm_int.h"
+#include "libtsm-int.h"
 #include "shl_llog.h"
 
-#define LLOG_SUBSYSTEM "tsm_render"
+#define LLOG_SUBSYSTEM "tsm-render"
 
 SHL_EXPORT
 tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,

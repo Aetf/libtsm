@@ -31,9 +31,7 @@ EXTRA_DIST = \
 	README \
 	COPYING \
 	LICENSE_htable \
-	NEWS \
-	docs/libtsm.pc.in \
-	docs/libtsm.sym
+	NEWS
 CLEANFILES =
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA =
@@ -69,7 +67,8 @@ AM_CFLAGS = \
 	-fdata-sections
 AM_CPPFLAGS = \
 	-include $(top_builddir)/config.h \
-	-I $(srcdir)/src
+	-I $(srcdir)/src \
+	-I $(srcdir)/src/shared
 AM_LDFLAGS =
 
 if BUILD_HAVE_GNU_LD
@@ -106,10 +105,10 @@ endif
 noinst_LTLIBRARIES += libshl.la
 
 libshl_la_SOURCES = \
-	src/shl_array.h \
-	src/shl_htable.h \
-	src/shl_htable.c \
-	src/shl_llog.h
+	src/shared/shl_array.h \
+	src/shared/shl_htable.h \
+	src/shared/shl_htable.c \
+	src/shared/shl_llog.h
 libshl_la_CPPFLAGS = $(AM_CPPFLAGS)
 libshl_la_LDFLAGS = $(AM_LDFLAGS)
 libshl_la_LIBADD = $(AM_LIBADD)
@@ -120,19 +119,22 @@ libshl_la_LIBADD = $(AM_LIBADD)
 #
 
 lib_LTLIBRARIES += libtsm.la
-noinst_LTLIBRARIES += libtsm_test.la
-include_HEADERS += src/libtsm.h
-pkgconfig_DATA += docs/libtsm.pc
+noinst_LTLIBRARIES += libtsm-test.la
+include_HEADERS += src/tsm/libtsm.h
+pkgconfig_DATA += src/tsm/libtsm.pc
+EXTRA_DIST += \
+	src/tsm/libtsm.pc.in \
+	src/tsm/libtsm.sym
 
 libtsm_la_SOURCES = \
-	src/libtsm.h \
-	src/libtsm_int.h \
-	src/tsm_unicode.c \
-	src/tsm_screen.c \
-	src/tsm_selection.c \
-	src/tsm_render.c \
-	src/tsm_vte.c \
-	src/tsm_vte_charsets.c \
+	src/tsm/libtsm.h \
+	src/tsm/libtsm-int.h \
+	src/tsm/tsm-render.c \
+	src/tsm/tsm-screen.c \
+	src/tsm/tsm-selection.c \
+	src/tsm/tsm-unicode.c \
+	src/tsm/tsm-vte.c \
+	src/tsm/tsm-vte-charsets.c \
 	external/wcwidth.h \
 	external/wcwidth.c \
 	external/xkbcommon-keysyms.h
@@ -144,7 +146,7 @@ libtsm_test_la_CPPFLAGS = $(AM_CPPFLAGS)
 libtsm_la_LIBADD = libshl.la
 libtsm_test_la_LIBADD = libshl.la
 
-EXTRA_libtsm_la_DEPENDENCIES = $(top_srcdir)/docs/libtsm.sym
+EXTRA_libtsm_la_DEPENDENCIES = $(top_srcdir)/src/tsm/libtsm.sym
 
 libtsm_la_LDFLAGS = \
 	$(AM_LDFLAGS) \
@@ -152,7 +154,7 @@ libtsm_la_LDFLAGS = \
 
 if BUILD_HAVE_GNU_LD
 libtsm_la_LDFLAGS += \
-	-Wl,--version-script="$(top_srcdir)/docs/libtsm.sym"
+	-Wl,--version-script="$(top_srcdir)/src/tsm/libtsm.sym"
 endif
 
 libtsm_test_la_LDFLAGS = \
@@ -191,7 +193,7 @@ test_sources = \
 	test/test_common.h
 test_libs = \
 	libshl.la \
-	libtsm_test.la \
+	libtsm-test.la \
 	$(CHECK_LIBS)
 test_cflags = \
 	$(AM_CPPFLAGS) \
@@ -214,7 +216,9 @@ test_valgrind_CPPFLAGS = $(test_cflags)
 test_valgrind_LDADD = $(test_libs)
 test_valgrind_LDFLAGS = $(test_lflags)
 
-VALGRIND = CK_FORK=no valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --leak-resolution=high --error-exitcode=1
+EXTRA_DIST += test.supp
+
+VALGRIND = CK_FORK=no valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --leak-resolution=high --error-exitcode=1 --suppressions=$(top_builddir)/test.supp
 
 # verify that test_valgrind actually leaks data
 memcheck-verify: check

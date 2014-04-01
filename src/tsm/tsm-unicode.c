@@ -59,7 +59,7 @@
 #include <string.h>
 #include "external/wcwidth.h"
 #include "libtsm.h"
-#include "libtsm_int.h"
+#include "libtsm-int.h"
 #include "shl_array.h"
 #include "shl_htable.h"
 

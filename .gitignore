@@ -20,9 +20,9 @@ config.h.in~
 config.log
 config.status
 configure
-docs/libtsm.pc
 libtool
 m4/
+src/tsm/libtsm.pc
 stamp-h1
 test-suite.log
 test_htable

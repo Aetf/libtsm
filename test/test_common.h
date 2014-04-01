@@ -43,8 +43,8 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
-#include "libtsm.h"
-#include "libtsm_int.h"
+#include "tsm/libtsm.h"
+#include "tsm/libtsm-int.h"
 #include "shl_htable.h"
 
 /* lower address-space is protected from user-allocation, so this is invalid */
