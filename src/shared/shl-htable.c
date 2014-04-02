@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include "shl_htable.h"
+#include "shl-htable.h"
 
 #define COLD __attribute__((cold))
 

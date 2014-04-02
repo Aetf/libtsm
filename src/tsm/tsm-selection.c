@@ -57,7 +57,7 @@
 #include <string.h>
 #include "libtsm.h"
 #include "libtsm-int.h"
-#include "shl_llog.h"
+#include "shl-llog.h"
 
 #define LLOG_SUBSYSTEM "tsm-selection"
 

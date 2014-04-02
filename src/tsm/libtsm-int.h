@@ -30,7 +30,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "libtsm.h"
-#include "shl_llog.h"
+#include "shl-llog.h"
 
 #define SHL_EXPORT __attribute__((visibility("default")))
 

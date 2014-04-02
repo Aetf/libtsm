@@ -105,10 +105,10 @@ endif
 noinst_LTLIBRARIES += libshl.la
 
 libshl_la_SOURCES = \
-	src/shared/shl_array.h \
-	src/shared/shl_htable.h \
-	src/shared/shl_htable.c \
-	src/shared/shl_llog.h
+	src/shared/shl-array.h \
+	src/shared/shl-htable.h \
+	src/shared/shl-htable.c \
+	src/shared/shl-llog.h
 libshl_la_CPPFLAGS = $(AM_CPPFLAGS)
 libshl_la_LDFLAGS = $(AM_LDFLAGS)
 libshl_la_LIBADD = $(AM_LIBADD)
