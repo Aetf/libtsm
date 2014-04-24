@@ -108,7 +108,10 @@ libshl_la_SOURCES = \
 	src/shared/shl-array.h \
 	src/shared/shl-htable.h \
 	src/shared/shl-htable.c \
-	src/shared/shl-llog.h
+	src/shared/shl-llog.h \
+	src/shared/shl-macro.h \
+	src/shared/shl-ring.h \
+	src/shared/shl-ring.c
 libshl_la_CPPFLAGS = $(AM_CPPFLAGS)
 libshl_la_LDFLAGS = $(AM_LDFLAGS)
 libshl_la_LIBADD = $(AM_LIBADD)
