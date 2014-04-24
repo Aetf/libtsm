@@ -40,6 +40,7 @@ TPHONY =
 TESTS =
 MEMTESTS =
 check_PROGRAMS =
+bin_PROGRAMS =
 lib_LTLIBRARIES =
 noinst_LTLIBRARIES =
 
@@ -167,6 +168,35 @@ if BUILD_HAVE_XKBCOMMON
 libtsm_la_CPPFLAGS += $(XKBCOMMON_CFLAGS)
 libtsm_test_la_CPPFLAGS += $(XKBCOMMON_CFLAGS)
 endif
+
+#
+# GtkTsm - Example
+#
+
+if BUILD_ENABLE_GTKTSM
+bin_PROGRAMS += gtktsm
+endif
+
+gtktsm_SOURCES = \
+	src/gtktsm/gtktsm.c \
+	src/gtktsm/gtktsm-app.h \
+	src/gtktsm/gtktsm-app.c \
+	src/gtktsm/gtktsm-terminal.h \
+	src/gtktsm/gtktsm-terminal.c \
+	src/gtktsm/gtktsm-win.h \
+	src/gtktsm/gtktsm-win.c \
+	src/shared/shl-pty.h \
+	src/shared/shl-pty.c
+gtktsm_CPPFLAGS = \
+	$(AM_CPPFLAGS) \
+	$(GTKTSM_CFLAGS)
+gtktsm_LDADD = \
+	-lm \
+	libshl.la \
+	libtsm.la \
+	$(GTKTSM_LIBS)
+gtktsm_LDFLAGS = \
+	$(AM_LDFLAGS)
 
 #
 # Tests

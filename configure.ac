@@ -69,6 +69,39 @@ AC_SUBST(CHECK_LIBS)
 AM_CONDITIONAL([BUILD_HAVE_CHECK], [test "x$have_check" = "xyes"])
 
 #
+# Optionally, look for gtk+-3 and friends for our gtktsm example.
+# This is linux-only as it uses epoll and friends. Therefore, it's disabled by
+# default.
+#
+
+AC_MSG_CHECKING([whether to build gtktsm])
+AC_ARG_ENABLE([gtktsm],
+              [AS_HELP_STRING([--enable-gtktsm],
+                              [whether to build gtktsm])])
+if test "x$enable_gtktsm" = "x" ; then
+        enable_gtktsm="no (default)"
+fi
+AC_MSG_RESULT([$enable_gtktsm])
+
+PKG_CHECK_MODULES([GTKTSM], [gtk+-3.0 cairo pango pangocairo xkbcommon],
+                  [have_gtktsm=yes], [have_gtktsm=no])
+AC_SUBST(GTKTSM_CFLAGS)
+AC_SUBST(GTKTSM_LIBS)
+
+if test ! "x$have_gtktsm" = "xyes" ; then
+        if test "x$enable_gtktsm" = "xyes" ; then
+                AC_ERROR([GtkTsm dependencies not found])
+        else
+                enable_gtktsm="no"
+        fi
+elif test "x${enable_gtktsm% *}" = "xyes" ; then
+        enable_gtktsm="yes"
+else
+        enable_gtktsm="no"
+fi
+AM_CONDITIONAL([BUILD_ENABLE_GTKTSM], [test "x$enable_gtktsm" = "xyes"])
+
+#
 # debug mode
 # If --enable-debug is given, we enable several non-standard debug options. We
 # enable a lot of debug options by default, so this option is really only for
@@ -159,6 +192,7 @@ AC_MSG_NOTICE([Build configuration:
               host-os: $host_os
 
   Miscellaneous Options:
+               gtktsm: $enable_gtktsm
                 debug: $enable_debug
         optimizations: $enable_optimizations
        building tests: $have_check
