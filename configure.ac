@@ -9,7 +9,7 @@ AC_INIT([libtsm],
         [3],
         [http://bugs.freedesktop.org/enter_bug.cgi?product=kmscon],
         [libtsm],
-        [http://www.freedesktop.org/wiki/Software/kmscon/libtsm])
+        [http://www.freedesktop.org/wiki/Software/libtsm])
 AC_CONFIG_SRCDIR([src/tsm/libtsm.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])

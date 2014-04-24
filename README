@@ -18,7 +18,7 @@ as possible. This is why the TERM variable can be set to xterm-color256 with any
 TSM based terminal emulator.
 
 Website:
-  http://www.freedesktop.org/wiki/Software/kmscon/libtsm
+  http://www.freedesktop.org/wiki/Software/libtsm
 
 == Requirements ==
 
