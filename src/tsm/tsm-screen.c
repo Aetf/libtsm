@@ -902,7 +902,7 @@ void tsm_screen_sb_page_down(struct tsm_screen *con, unsigned int num)
 SHL_EXPORT
 void tsm_screen_sb_reset(struct tsm_screen *con)
 {
-	if (!con)
+	if (!con || !con->sb_pos)
 		return;
 
 	screen_inc_age(con);
