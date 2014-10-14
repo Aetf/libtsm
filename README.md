@@ -9,4 +9,4 @@ This is a personal modified version. For more information, please refer to its o
 ##Added feature
 + Support underline rendering
 + Add a soft-black color palette
-+ Support 24-bit true color support
++ Support 24-bit true color
