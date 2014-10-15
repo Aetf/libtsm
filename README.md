@@ -7,6 +7,6 @@ emulators like xterm, gnome-terminal, konsole, ..
 This is a personal modified version. For more information, please refer to its original README (without .md extension).
 
 ##Added feature
-+ Support underline rendering
++ Support underline rendering (with a patched version of kmscon: Aetf/kmscon)
 + Add a soft-black color palette
 + Support 24-bit true color
