@@ -2524,31 +2524,43 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 			return true;
 		case XKB_KEY_Up:
 		case XKB_KEY_KP_Up:
-			if (vte->flags & FLAG_CURSOR_KEY_MODE)
+			if (mods & TSM_CONTROL_MASK) {
+				vte_write(vte, "\e[1;5A", 6);
+			} else if (vte->flags & FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOA", 3);
-			else
+			} else {
 				vte_write(vte, "\e[A", 3);
+			}
 			return true;
 		case XKB_KEY_Down:
 		case XKB_KEY_KP_Down:
-			if (vte->flags & FLAG_CURSOR_KEY_MODE)
+			if (mods & TSM_CONTROL_MASK) {
+				vte_write(vte, "\e[1;5B", 6);
+			} else if (vte->flags & FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOB", 3);
-			else
+			} else {
 				vte_write(vte, "\e[B", 3);
+			}
 			return true;
 		case XKB_KEY_Right:
 		case XKB_KEY_KP_Right:
-			if (vte->flags & FLAG_CURSOR_KEY_MODE)
+			if (mods & TSM_CONTROL_MASK) {
+				vte_write(vte, "\e[1;5C", 6);
+			} else if (vte->flags & FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOC", 3);
-			else
+			} else {
 				vte_write(vte, "\e[C", 3);
+			}
 			return true;
 		case XKB_KEY_Left:
 		case XKB_KEY_KP_Left:
-			if (vte->flags & FLAG_CURSOR_KEY_MODE)
+			if (mods & TSM_CONTROL_MASK) {
+				vte_write(vte, "\e[1;5D", 6);
+			} else if (vte->flags & FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOD", 3);
-			else
+			} else {
 				vte_write(vte, "\e[D", 3);
+			}
 			return true;
 		case XKB_KEY_KP_Insert:
 		case XKB_KEY_KP_0:
