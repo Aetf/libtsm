@@ -675,7 +675,8 @@ void tsm_vte_hard_reset(struct tsm_vte *vte)
 
 static void send_primary_da(struct tsm_vte *vte)
 {
-	vte_write(vte, "\e[?60;1;6;9;15c", 17);
+	const static char str[] = "\e[?60;1;6;9;15c";
+	vte_write(vte, str, sizeof(str) - 1);
 }
 
 /* execute control character (C0 or C1) */
