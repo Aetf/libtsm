@@ -1215,7 +1215,8 @@ static void csi_attribute(struct tsm_vte *vte)
 				}
 				code = vte->csi_argv[i + 2];
 				if (code < 16) {
-					//nochange
+					//no change
+					cb = cg = cr = 0;
 				} else if (code < 232) {
 					code -= 16;
 					cb = bval[code % 6];
