@@ -7,9 +7,10 @@ emulators like xterm, gnome-terminal, konsole, ..
 This is a personal modified version. For more information, please refer to its original README (without .md extension).
 
 ## Added feature
-+ Support underline rendering (with [a patched version of kmscon](https://github.com/Aetf/kmscon))
 + Add a soft-black color palette
++ Support underline rendering (with [a patched version of kmscon](https://github.com/Aetf/kmscon))
 + Support 24-bit true color
++ Support Ctrl + Arrow keys
 + Bug fixes:
     * [Repsonse to 'CSI c' contains random bytes][91335]
 
