@@ -146,7 +146,7 @@ static int pty_init_child(int fd)
 	if (r < 0)
 		return -errno;
 
-	for (i = 1; i < SIGUNUSED; ++i)
+	for (i = 1; i < SIGSYS; ++i)
 		signal(i, SIG_DFL);
 
 	r = grantpt(fd);
