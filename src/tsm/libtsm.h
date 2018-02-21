@@ -297,11 +297,18 @@ typedef void (*tsm_vte_write_cb) (struct tsm_vte *vte,
 				  size_t len,
 				  void *data);
 
+typedef void (*tsm_vte_osc_cb) (struct tsm_vte *vte,
+				  const char *u8,
+				  size_t len,
+				  void *data);
+
 int tsm_vte_new(struct tsm_vte **out, struct tsm_screen *con,
 		tsm_vte_write_cb write_cb, void *data,
 		tsm_log_t log, void *log_data);
 void tsm_vte_ref(struct tsm_vte *vte);
 void tsm_vte_unref(struct tsm_vte *vte);
+
+void tsm_vte_set_osc_cb(struct tsm_vte *vte, tsm_vte_osc_cb osc_cb, void *osc_data);
 
 int tsm_vte_set_palette(struct tsm_vte *vte, const char *palette);
 void tsm_vte_get_def_attr(struct tsm_vte *vte, struct tsm_screen_attr *out);

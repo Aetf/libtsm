@@ -117,6 +117,9 @@ enum parser_action {
 /* max CSI arguments */
 #define CSI_ARG_MAX 16
 
+/* max length of an OSC code */
+#define OSC_MAX_LEN 128
+
 /* terminal flags */
 #define FLAG_CURSOR_KEY_MODE			0x00000001 /* DEC cursor key mode */
 #define FLAG_KEYPAD_APPLICATION_MODE		0x00000002 /* DEC keypad application mode; TODO: toggle on numlock? */
@@ -163,6 +166,11 @@ struct tsm_vte {
 	unsigned int csi_argc;
 	int csi_argv[CSI_ARG_MAX];
 	unsigned int csi_flags;
+
+	tsm_vte_osc_cb osc_cb;
+	void *osc_data;
+	unsigned int osc_len;
+	char osc_arg[OSC_MAX_LEN];
 
 	uint8_t (*palette)[3];
 	struct tsm_screen_attr def_attr;
@@ -408,6 +416,8 @@ int tsm_vte_new(struct tsm_vte **out, struct tsm_screen *con,
 	vte->con = con;
 	vte->write_cb = write_cb;
 	vte->data = data;
+	vte->osc_cb = NULL;
+	vte->osc_data = NULL;
 	vte->palette = get_palette(vte);
 	vte->def_attr.fccode = COLOR_FOREGROUND;
 	vte->def_attr.bccode = COLOR_BACKGROUND;
@@ -452,6 +462,13 @@ void tsm_vte_unref(struct tsm_vte *vte)
 	tsm_screen_unref(vte->con);
 	tsm_utf8_mach_free(vte->mach);
 	free(vte);
+}
+
+SHL_EXPORT
+void tsm_vte_set_osc_cb(struct tsm_vte *vte, tsm_vte_osc_cb osc_cb, void *osc_data)
+{
+	vte->osc_cb = osc_cb;
+	vte->osc_data = osc_data;
 }
 
 SHL_EXPORT
@@ -795,6 +812,9 @@ static void do_clear(struct tsm_vte *vte)
 	for (i = 0; i < CSI_ARG_MAX; ++i)
 		vte->csi_argv[i] = -1;
 	vte->csi_flags = 0;
+
+	vte->osc_len = 0;
+	memset(vte->osc_arg, 0, sizeof(vte->osc_arg));
 }
 
 static void do_collect(struct tsm_vte *vte, uint32_t data)
@@ -1812,6 +1832,26 @@ static uint32_t vte_map(struct tsm_vte *vte, uint32_t val)
 	return val;
 }
 
+static void do_osc_collect(struct tsm_vte *vte, uint32_t val) {
+	char buf[4];
+	int len = tsm_ucs4_to_utf8(val, buf);
+	if (vte->osc_len + len > sizeof(vte->osc_arg) - 1) {
+		return;
+	}
+
+	memcpy(vte->osc_arg + vte->osc_len, buf, len);
+	vte->osc_len += len;
+}
+
+static void do_osc_end(struct tsm_vte *vte) {
+	if (!vte->osc_cb) {
+		return;
+	}
+
+	vte->osc_arg[vte->osc_len] = 0;
+	vte->osc_cb(vte, vte->osc_arg, vte->osc_len, vte->osc_data);
+}
+
 /* perform parser action */
 static void do_action(struct tsm_vte *vte, uint32_t data, int action)
 {
@@ -1853,10 +1893,13 @@ static void do_action(struct tsm_vte *vte, uint32_t data, int action)
 		case ACTION_DCS_END:
 			break;
 		case ACTION_OSC_START:
+			do_clear(vte);
 			break;
 		case ACTION_OSC_COLLECT:
+			do_osc_collect(vte, data);
 			break;
 		case ACTION_OSC_END:
+			do_osc_end(vte);
 			break;
 		default:
 			llog_warning(vte, "invalid action %d", action);
