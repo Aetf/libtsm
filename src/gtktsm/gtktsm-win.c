@@ -65,6 +65,15 @@ static void win_realize(GtkWidget *widget)
 	gdk_window_set_background_rgba(w, &col);
 }
 
+static gboolean win_title_fn(GtkTsmTerminal *term, gchar *title, gpointer data)
+{
+	GtkTsmWin *win = data;
+
+	gtk_window_set_title(GTK_WINDOW(win), title);
+
+	return FALSE;
+}
+
 static gboolean win_stopped_fn(GtkTsmTerminal *term, gpointer data)
 {
 	GtkTsmWin *win = data;
@@ -83,6 +92,11 @@ static void gtktsm_win_init(GtkTsmWin *win)
 	p->term = gtktsm_terminal_new();
 	gtk_container_add(GTK_CONTAINER(win), GTK_WIDGET(p->term));
 	gtk_widget_show(GTK_WIDGET(p->term));
+
+    g_signal_connect(G_OBJECT(p->term),
+			 "terminal-title-changed",
+			 G_CALLBACK(win_title_fn),
+			 win);
 
 	g_signal_connect(G_OBJECT(p->term),
 			 "terminal-stopped",

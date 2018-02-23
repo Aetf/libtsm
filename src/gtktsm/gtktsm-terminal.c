@@ -1147,6 +1147,7 @@ enum {
 enum {
 	TERMINAL_SIGNAL_CHANGED,
 	TERMINAL_SIGNAL_STOPPED,
+	TERMINAL_SIGNAL_TITLE,
 	TERMINAL_SIGNAL_CNT,
 };
 
@@ -1578,6 +1579,20 @@ static void terminal_log_fn(void *data,
 	g_logv(G_LOG_DOMAIN "-tsm", flags, format, args);
 }
 
+static void terminal_osc_fn(struct tsm_vte *vte,
+			      const char *u8,
+			      size_t len,
+			      void *data)
+{
+	GtkTsmTerminal *term = data;
+
+	if (u8[0] == '2' && u8[1] == ';') {
+		g_signal_emit(term,
+				  terminal_signals[TERMINAL_SIGNAL_TITLE],
+				  0, u8 + 2);
+	}
+}
+
 static gboolean terminal_bridge_fn(GIOChannel *chan,
 				   GIOCondition cond,
 				   gpointer data)
@@ -1787,6 +1802,7 @@ static void gtktsm_terminal_init(GtkTsmTerminal *term)
 			term);
 	if (r < 0)
 		g_error("tsm_vte_new() failed: %d", r);
+	tsm_vte_set_osc_cb(p->vte, terminal_osc_fn, term);
 
 	p->pty_bridge = shl_pty_bridge_new();
 	if (p->pty_bridge < 0)
@@ -1906,6 +1922,15 @@ static void gtktsm_terminal_class_init(GtkTsmTerminalClass *klass)
 			    NULL, NULL, /* accu + accu-data */
 			    g_cclosure_marshal_generic,
 			    G_TYPE_NONE, 0);
+
+	sig = &terminal_signals[TERMINAL_SIGNAL_TITLE];
+	*sig = g_signal_new("terminal-title-changed",
+				G_OBJECT_CLASS_TYPE(klass),
+				G_SIGNAL_RUN_FIRST,
+				0,
+				NULL, NULL, /* accu + accu-data */
+				g_cclosure_marshal_generic,
+				G_TYPE_NONE, 1, G_TYPE_STRING);
 }
 
 GtkTsmTerminal *gtktsm_terminal_new(void)
