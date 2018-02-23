@@ -30,3 +30,4 @@ test_htable
 test_symbol
 test_valgrind
 *.kdev4
+build

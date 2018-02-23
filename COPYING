@@ -35,20 +35,19 @@ apply:
 
 == Third-Party Source ==
 
-The hash-table implementation in external/htable.* is copied from ccan and
-licensed under the conditions of the LGPL-2.1 or later as published by the FSF:
+The hash-table implementation in src/shared/shl-htable.* uses internally the
+htable from CCAN, see LICENSE_htable.
 
-	Author: Rusty Russel <rusty@rustcorp.com.au>
+The wcwidth() implementation in ./external/wcwidth is from
 
-The wcwidth() implementation in ./external/wcwidth.c is from:
-
-	Markus Kuhn -- 2007-05-26 (Unicode 5.0)
-
-	Permission to use, copy, modify, and distribute this software
-	for any purpose and without fee is hereby granted. The author
-	disclaims all warranties with regard to this software.
-
-	Latest version: http://www.cl.cam.ac.uk/~mgk25/ucs/wcwidth.c
+	Copyright (C) Fredrik Fornwall 2016.
+	Distributed under the MIT License.
+	
+	Implementation of wcwidth(3) as a C port of:
+	https://github.com/jquast/wcwidth
+	
+	Report issues at:
+	https://github.com/termux/wcwidth
 
 UCS-4 to UTF-8 encoding is copied from "terminology":
 

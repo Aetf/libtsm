@@ -1,5 +1,6 @@
 #
 # libtsm - Global Makefile
+# Copyright (c) 2018 Aetf <aetf@unlimitedcodeworks.xyz>
 # Copyright (c) 2012-2013 David Herrmann <dh.herrmann@gmail.com>
 #
 
@@ -8,7 +9,7 @@
 #
 
 LIBTSM_CURRENT = 3
-LIBTSM_REVISION = 0
+LIBTSM_REVISION = 1
 LIBTSM_AGE = 0
 
 #
@@ -139,8 +140,8 @@ libtsm_la_SOURCES = \
 	src/tsm/tsm-unicode.c \
 	src/tsm/tsm-vte.c \
 	src/tsm/tsm-vte-charsets.c \
-	external/wcwidth.h \
-	external/wcwidth.c \
+	external/wcwidth/wcwidth.h \
+	external/wcwidth/wcwidth.c \
 	external/xkbcommon-keysyms.h
 libtsm_test_la_SOURCES = $(libtsm_la_SOURCES)
 
