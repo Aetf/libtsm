@@ -986,6 +986,8 @@ static int renderer_draw_cell(struct tsm_screen *screen,
 	/* select correct font */
 	if (attr->bold && ctx->face_bold)
 		face = ctx->face_bold;
+	else if (attr->italic && ctx->face_italic)
+		face = ctx->face_italic;
 	else
 		face = ctx->face_regular;
 
