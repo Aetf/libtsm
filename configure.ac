@@ -7,9 +7,9 @@ AC_PREREQ(2.68)
 
 AC_INIT([libtsm],
         [3],
-        [http://bugs.freedesktop.org/enter_bug.cgi?product=kmscon],
+        [https://github.com/Aetf/libtsm/issues/new],
         [libtsm],
-        [http://www.freedesktop.org/wiki/Software/libtsm])
+        [https://github.com/Aetf/libtsm])
 AC_CONFIG_SRCDIR([src/tsm/libtsm.h])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
