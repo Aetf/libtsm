@@ -6,7 +6,7 @@
 AC_PREREQ(2.68)
 
 AC_INIT([libtsm],
-        [3],
+        [4.0.0],
         [https://github.com/Aetf/libtsm/issues/new],
         [libtsm],
         [https://github.com/Aetf/libtsm])
