@@ -8,7 +8,7 @@ This is a personal modified version. For more information, please refer to its o
 
 ## Added feature
 + Add soft-black and [base16](https://github.com/chriskempson/base16-default-schemes)-light and -dark color palettes
-+ Support underline rendering (with [a patched version of kmscon](https://github.com/Aetf/kmscon))
++ Support underline/italic rendering (with [a patched version of kmscon](https://github.com/Aetf/kmscon))
 + Support 24-bit true color
 + Support Ctrl + Arrow keys
 + Support custom title using OSC
