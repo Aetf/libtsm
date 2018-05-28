@@ -108,7 +108,8 @@ typedef void (*tsm_log_t) (void *data,
 
 /* UCS4 helpers */
 
-#define TSM_UCS4_MAX (0x7fffffffUL)
+#define TSM_UCS4_MAX_BITS 31
+#define TSM_UCS4_MAX ((1UL << TSM_UCS4_MAX_BITS) - 1UL)
 #define TSM_UCS4_INVALID (TSM_UCS4_MAX + 1)
 #define TSM_UCS4_REPLACEMENT (0xfffdUL)
 
@@ -170,7 +171,7 @@ struct tsm_screen_attr {
 };
 
 typedef int (*tsm_screen_draw_cb) (struct tsm_screen *con,
-				   uint32_t id,
+				   uint64_t id,
 				   const uint32_t *ch,
 				   size_t len,
 				   unsigned int width,
