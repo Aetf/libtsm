@@ -45,7 +45,7 @@
 #include <stdlib.h>
 #include "tsm/libtsm.h"
 #include "tsm/libtsm-int.h"
-#include "shl_htable.h"
+#include "shl-htable.h"
 
 /* lower address-space is protected from user-allocation, so this is invalid */
 #define TEST_INVALID_PTR ((void*)0x10)
