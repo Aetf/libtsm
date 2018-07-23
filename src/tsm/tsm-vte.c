@@ -367,6 +367,28 @@ static uint8_t color_palette_base16_light[COLOR_NUM][3] = {
 	[COLOR_BACKGROUND]    = { 0xd8, 0xd8, 0xd8 }, /* light grey */
 };
 
+static uint8_t color_palette_vga[COLOR_NUM][3] = {
+	[COLOR_BLACK]         = {   0,   0,   0 }, /* black */
+	[COLOR_RED]           = { 170,   0,   0 }, /* red */
+	[COLOR_GREEN]         = {   0, 170,   0 }, /* green */
+	[COLOR_YELLOW]        = { 170,  85,   0 }, /* yellow */
+	[COLOR_BLUE]          = {   0,   0, 170 }, /* blue */
+	[COLOR_MAGENTA]       = { 170,   0, 170 }, /* magenta */
+	[COLOR_CYAN]          = {   0, 170, 170 }, /* cyan */
+	[COLOR_LIGHT_GREY]    = { 170, 170, 170 }, /* light grey */
+	[COLOR_DARK_GREY]     = {  85,  85,  85 }, /* dark grey */
+	[COLOR_LIGHT_RED]     = { 255,  85,  85 }, /* light red */
+	[COLOR_LIGHT_GREEN]   = {  85, 255,  85 }, /* light green */
+	[COLOR_LIGHT_YELLOW]  = { 255, 255,  85 }, /* light yellow */
+	[COLOR_LIGHT_BLUE]    = {  85,  85, 255 }, /* light blue */
+	[COLOR_LIGHT_MAGENTA] = { 255,  85, 255 }, /* light magenta */
+	[COLOR_LIGHT_CYAN]    = {  85, 255, 255 }, /* light cyan */
+	[COLOR_WHITE]         = { 255, 255, 255 }, /* white */
+
+	[COLOR_FOREGROUND]    = { 170, 170, 170 }, /* light grey */
+	[COLOR_BACKGROUND]    = {   0,   0,   0 }, /* black */
+};
+
 static uint8_t (*get_palette(struct tsm_vte *vte))[3]
 {
 	if (!vte->palette_name)
@@ -384,6 +406,8 @@ static uint8_t (*get_palette(struct tsm_vte *vte))[3]
 		return color_palette_base16_dark;
 	if (!strcmp(vte->palette_name, "base16-light"))
 		return color_palette_base16_light;
+	if (!strcmp(vte->palette_name, "vga"))
+		return color_palette_vga;
 
 	return color_palette;
 }
