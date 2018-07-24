@@ -507,6 +507,7 @@ void tsm_vte_unref(struct tsm_vte *vte)
 		return;
 
 	llog_debug(vte, "destroying vte object");
+	free(vte->palette_name);
 	tsm_screen_unref(vte->con);
 	tsm_utf8_mach_free(vte->mach);
 	free(vte);
