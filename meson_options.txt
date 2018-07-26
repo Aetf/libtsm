@@ -1,0 +1,6 @@
+option('tests', type : 'combo', choices : ['auto', 'true', 'false'],
+       description : 'whether to build the tests')
+option('gtktsm', type : 'combo', choices : ['auto', 'true', 'false'],
+       description : 'whether to build gtktsm')
+option('debug', type : 'boolean', value : false,
+       description : 'whether to build with extra debugging options')
