@@ -6,8 +6,8 @@ emulators like xterm, gnome-terminal, konsole, ..
 
 This is a personal modified version. For more information, please refer to its original [README](README).
 
-## Added feature
-+ Add soft-black and [base16](https://github.com/chriskempson/base16-default-schemes)-light and -dark color palettes
+## Added features
++ Configurable color palette
 + Support underline/italic rendering (with [a patched version of kmscon](https://github.com/Aetf/kmscon))
 + Support 24-bit true color
 + Support Ctrl + Arrow keys
