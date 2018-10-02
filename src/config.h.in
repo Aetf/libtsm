@@ -1,0 +1,10 @@
+#ifndef LIBTSM_CONFIG_H
+#define LIBTSM_CONFIG_H
+
+/* Enable debug mode */
+#cmakedefine BUILD_ENABLE_DEBUG
+
+/* Have xkbcommon library */
+#cmakedefine BUILD_HAVE_XKBCOMMON
+
+#endif // LIBTSM_CONFIG_H
