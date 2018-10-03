@@ -30,16 +30,21 @@ include(cmake/BuildTypes.cmake)
 #---------------------------------------------------------------------------------------
 # Options
 #---------------------------------------------------------------------------------------
+option(BUILD_SHARED_LIBS "Build as shared libraries" ON)
+add_feature_info(BUILD_SHARED_LIBS BUILD_SHARED_LIBS "build as shared libraries")
+
 option(BUILD_TESTING "Whether to build test suite in default target" OFF)
-add_feature_info(tests BUILD_TESTING "build unit tests")
+add_feature_info(BUILD_TESTING BUILD_TESTING "build unit tests")
 
 # We enable a lot of debug options by default, so this option is really only for
 # extended developer debug modes.
 option(ENABLE_EXTRA_DEBUG "Whether to enable several non-standard debug options." OFF)
-add_feature_info(extra_debugging ENABLE_EXTRA_DEBUG "enable additional non-standard debug options")
+add_feature_info(ENABLE_EXTRA_DEBUG ENABLE_EXTRA_DEBUG "enable additional non-standard debug options")
 
-# Defined after find packages
-#option(BUILD_GTKTSM "Whether to build gtktsm, defaults to ON if dependencies are met" ${BUILD_GTKTSM_INITIAL})
+# Whether to our gtktsm example. This is linux-only as it uses epoll and friends.
+# Therefore, it's disabled by default.
+option(BUILD_GTKTSM "Whether to build the gtktsm example" OFF)
+add_feature_info(BUILD_GTKTSM BUILD_GTKTSM "build the gtktsm example, it requires gtk+-3 and friends and is linux-only.")
 
 #---------------------------------------------------------------------------------------
 # Find packages
@@ -64,66 +69,37 @@ set_package_properties(XKBCommon PROPERTIES
 )
 
 # Optionally, look for gtk+-3 and friends for gtktsm
-if(DEFINED BUILD_GTKTSM)
-    set(BUILD_GTKTSM_INITIAL ${BUILD_GTKTSM})
-else()
-    # set to ON at first, and change to OFF if dependencies are not met
-    set(BUILD_GTKTSM_INITIAL ON)
-endif()
-
-if(BUILD_GTKTSM_INITIAL)
+if(BUILD_GTKTSM)
     find_package(GTK3)
     set_package_properties(GTK3 PROPERTIES
-        TYPE OPTIONAL
+        TYPE REQUIRED
         PURPOSE "For gtktsm example"
     )
 
     find_package(Cairo)
     set_package_properties(Cairo PROPERTIES
-        TYPE OPTIONAL
+        TYPE REQUIRED
         PURPOSE "For gtktsm example"
     )
 
     find_package(Pango)
     set_package_properties(Pango PROPERTIES
-        TYPE OPTIONAL
+        TYPE REQUIRED
         PURPOSE "For gtktsm example"
     )
 
     find_package(PangoCairo)
     set_package_properties(PangoCairo PROPERTIES
-        TYPE OPTIONAL
+        TYPE REQUIRED
         PURPOSE "For gtktsm example"
     )
 
     find_package(XKBCommon COMPONENTS XKBCommon)
     set_package_properties(XKBCommon PROPERTIES
-        TYPE OPTIONAL
+        TYPE REQUIRED
         PURPOSE "For gtktsm example"
     )
-
-    # If the user requested to build gtktsm, then the dependencies becomes required
-    if((DEFINED BUILD_GTKTSM) AND BUILD_GTKTSM)
-        set_package_properties(GTK3 PROPERTIES TYPE REQUIRED)
-        set_package_properties(PangoCairo PROPERTIES TYPE REQUIRED)
-        set_package_properties(XKBCommon PROPERTIES TYPE REQUIRED)
-    endif()
 endif()
-
-# we will build gtktsm if the user requested so or if the dependencies are met
-if(NOT DEFINED BUILD_GTKTSM)
-    if(GTK3_FOUND AND PangoCairo_FOUND AND XKBCommon_FOUND)
-        set(BUILD_GTKTSM_INITIAL ON)
-    else()
-        set(BUILD_GTKTSM_INITIAL OFF)
-    endif()
-endif()
-
-# Whether to our gtktsm example. This is linux-only as it uses epoll and friends.
-# Therefore, it's disabled by default.
-option(BUILD_GTKTSM "Whether to build gtktsm, defaults to ON if dependencies are met" ${BUILD_GTKTSM_INITIAL})
-# We defer the feature info after depencency checking
-add_feature_info(gtktsm BUILD_GTKTSM "build the gtktsm example, it requires gtk+-3 and friends and is linux-only.")
 
 feature_summary(INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES WHAT ALL)
 
@@ -156,20 +132,43 @@ if(BUILD_TESTING)
 endif(BUILD_TESTING)
 
 #---------------------------------------------------------------------------------------
-# Installation
+# Installation of other files
 #---------------------------------------------------------------------------------------
-configure_file(etc/libtsm.pc.in libtsm.pc @ONLY)
-install(FILES libtsm.pc DESTINATION ${CMAKE_INSTALL_DATADIR}/pkgconfig)
+# pkgconfig file for backward compatibility
+configure_file(etc/libtsm.pc.in ${CMAKE_CURRENT_BINARY_DIR}/libtsm.pc @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libtsm.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
-# TODO: installation
-#
-#install(TARGETS libtsm libtsm_static
-#    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-#    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-#    PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libtsm"
-#)
-#install(TARGETS libtsm libtsm_static
-#    LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-#    ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-#    PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/libtsm"
-#)
+#Export the targets to a script
+set(INSTALL_CMAKEDIR ${CMAKE_INSTALL_LIBDIR}/cmake/libtsm)
+install(EXPORT tsm-targets
+    FILE
+    libtsm-targets.cmake
+    NAMESPACE
+    libtsm::
+    DESTINATION
+    ${INSTALL_CMAKEDIR}
+)
+
+#Create a ConfigVersion.cmake file
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/libtsm-config-version.cmake
+    COMPATIBILITY SameMajorVersion
+)
+
+configure_package_config_file(
+    ${CMAKE_SOURCE_DIR}/etc/libtsm-config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/libtsm-config.cmake
+    PATH_VARS
+        INSTALL_CMAKEDIR
+    INSTALL_DESTINATION
+        ${INSTALL_CMAKEDIR}
+    NO_CHECK_REQUIRED_COMPONENTS_MACRO
+)
+
+#Install the config, configversion and custom find modules
+install(FILES
+    ${CMAKE_CURRENT_BINARY_DIR}/libtsm-config-version.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/libtsm-config.cmake
+    DESTINATION ${INSTALL_CMAKEDIR}
+)

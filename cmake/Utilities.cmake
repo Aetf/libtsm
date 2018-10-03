@@ -238,3 +238,35 @@ macro(find_package_handle_library_components module_name)
         list(REMOVE_DUPLICATES ${module_name}_TARGETS)
     endif()
 endmacro()
+
+#
+# Link to an object library privately without polluting target exports
+#
+# this is done by not involving target_link_libraries but directly set
+# properties.
+#
+# This is needed because we don't want the consumer target to have to
+# export the object library
+# See: https://gitlab.kitware.com/cmake/cmake/issues/17357
+function(target_link_object_libraries target)
+    set(tlol_options)
+    set(tlol_oneValueArgs)
+    set(tlol_multiValueArgs PRIVATE)
+    cmake_parse_arguments(TLOL "${tlol_options}" "${tlol_oneValueArgs}" "${tlol_multiValueArgs}" ${ARGN})
+
+    if(TLOL_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unexpected arguments to target_link_object_libraries: ${TLOL_UNPARSED_ARGUMENTS}, note that only PRIVATE is allowed")
+    endif()
+
+    if(NOT TLOL_PRIVATE)
+        message(FATAL_ERROR "Missing PRIVATE argument to target_link_object_libraries")
+    endif()
+
+    foreach(lib IN LISTS TLOL_PRIVATE)
+        target_sources(${target} PRIVATE $<TARGET_OBJECTS:${lib}>)
+        target_include_directories(${target} PRIVATE $<TARGET_PROPERTY:${lib},INTERFACE_INCLUDE_DIRECTORIES>)
+        target_compile_options(${target} PRIVATE $<TARGET_PROPERTY:${lib},INTERFACE_COMPILE_OPTIONS>)
+        # This is not supported
+        #target_link_libraries(${target} PRIVATE $<TARGET_PROPERTY:${lib},INTERFACE_LINK_LIBRARIES>)
+    endforeach()
+endfunction()

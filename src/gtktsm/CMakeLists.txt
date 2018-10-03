@@ -10,7 +10,6 @@ add_executable(gtktsm
 target_link_libraries(gtktsm
     PRIVATE
         tsm
-        shl
 
         m
         gtk-3
@@ -19,8 +18,12 @@ target_link_libraries(gtktsm
         pangocairo
         XKB::XKBCommon
 )
+target_link_object_libraries(gtktsm
+    PRIVATE
+        shl
+)
 add_libtsm_compile_options(gtktsm)
 
-#install(TARGETS libtsm_main
-#    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
-#)
+install(TARGETS gtktsm
+    RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+)
