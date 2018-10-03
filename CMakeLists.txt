@@ -1,12 +1,14 @@
-cmake_minimum_required(VERSION 3.6)
+cmake_minimum_required(VERSION 3.10)
 
-project(libtsm VERSION 4.0.0 LANGUAGES C)
+project(libtsm
+    LANGUAGES C
+    VERSION 4.0.0
+    DESCRIPTION "terminal-emulator state machine"
+)
 
 # Some meta data
 ## TODO: merge into project above after we require cmake 3.12
 set(PROJECT_HOMEPAGE_URL "https://github.com/Aetf/libtsm")
-## TODO: merge into project above after we require cmake 3.10
-set(PROJECT_DESCRIPTION "terminal-emulator state machine")
 
 #---------------------------------------------------------------------------------------
 # Initial setups
@@ -58,7 +60,7 @@ include(GNUInstallDirs)
 
 # Extra cmake helpers
 find_package(ECM REQUIRED NO_MODULE REQUIRED)
-list(APPEND CMAKE_MODULE_PATH ${ECM_FIND_MODULE_DIR})
+list(APPEND CMAKE_MODULE_PATH ${ECM_MODULE_DIR} ${ECM_FIND_MODULE_DIR})
 
 # We need xkbcommon for keysym definitions. If it's not found, we use our own
 # private copy of xkbcommon-keysyms.h.
@@ -101,6 +103,15 @@ if(BUILD_GTKTSM)
     )
 endif()
 
+if(BUILD_TESTING)
+    enable_testing()
+    find_package(Check)
+    set_package_properties(Check PROPERTIES
+        TYPE REQUIRED
+        PURPOSE "For testing"
+    )
+endif()
+
 feature_summary(INCLUDE_QUIET_PACKAGES FATAL_ON_MISSING_REQUIRED_PACKAGES WHAT ALL)
 
 #---------------------------------------------------------------------------------------
@@ -128,7 +139,7 @@ add_subdirectory(external)
 add_subdirectory(src)
 
 if(BUILD_TESTING)
-    add_subdirectory(tests)
+    add_subdirectory(test)
 endif(BUILD_TESTING)
 
 #---------------------------------------------------------------------------------------

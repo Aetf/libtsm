@@ -51,7 +51,7 @@ foreach(pangocairo_dep ${PangoCairo_DEPS})
     list(APPEND PangoCairo_DEPS_FOUND_VARS "${pangocairo_dep}_FOUND")
     list(APPEND PangoCairo_INCLUDE_DIRS ${${pangocairo_dep}_INCLUDE_DIRS})
 
-    set_property (TARGET "${PangoCairo}" APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${${pango_dep}}")
+    set_property(TARGET "${PangoCairo}" APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${${pango_dep}}")
 endforeach(pangocairo_dep)
 
 include(FindPackageHandleStandardArgs)

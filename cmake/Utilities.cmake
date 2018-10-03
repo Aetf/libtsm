@@ -36,7 +36,7 @@ endfunction()
 
 # Print all properties for a target
 # From https://stackoverflow.com/questions/32183975/how-to-print-all-the-properties-of-a-target-in-cmake
-
+#
 # Get all propreties that cmake supports
 execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
 # Convert command output into a CMake list
@@ -240,33 +240,45 @@ macro(find_package_handle_library_components module_name)
 endmacro()
 
 #
-# Link to an object library privately without polluting target exports
+# Helper to link to an object library.
 #
-# this is done by not involving target_link_libraries but directly set
+# The advantage of using this over target_link_library directly
+# is that when used privately, it will not pollute target exports,
+# See: https://gitlab.kitware.com/cmake/cmake/issues/17357
+#
+# This is done by not involving target_link_libraries but directly set
 # properties.
 #
-# This is needed because we don't want the consumer target to have to
-# export the object library
-# See: https://gitlab.kitware.com/cmake/cmake/issues/17357
 function(target_link_object_libraries target)
     set(tlol_options)
     set(tlol_oneValueArgs)
-    set(tlol_multiValueArgs PRIVATE)
+    set(tlol_multiValueArgs PRIVATE INTERFACE PUBLIC)
     cmake_parse_arguments(TLOL "${tlol_options}" "${tlol_oneValueArgs}" "${tlol_multiValueArgs}" ${ARGN})
 
     if(TLOL_UNPARSED_ARGUMENTS)
-        message(FATAL_ERROR "Unexpected arguments to target_link_object_libraries: ${TLOL_UNPARSED_ARGUMENTS}, note that only PRIVATE is allowed")
+        message(FATAL_ERROR "Unexpected arguments to target_link_object_libraries: ${TLOL_UNPARSED_ARGUMENTS}")
     endif()
 
-    if(NOT TLOL_PRIVATE)
-        message(FATAL_ERROR "Missing PRIVATE argument to target_link_object_libraries")
+    if(NOT TLOL_PRIVATE AND NOT TLOL_INTERFACE AND NOT TLOL_PUBLIC)
+        message(FATAL_ERROR "Missing PRIVATE|INTERFACE|PUBLIC argument to target_link_object_libraries")
     endif()
 
     foreach(lib IN LISTS TLOL_PRIVATE)
-        target_sources(${target} PRIVATE $<TARGET_OBJECTS:${lib}>)
+        target_sources(${target} PRIVATE $<TARGET_OBJECTS:${lib}> $<TARGET_PROPERTY:${lib},INTERFACE_SOURCES>)
         target_include_directories(${target} PRIVATE $<TARGET_PROPERTY:${lib},INTERFACE_INCLUDE_DIRECTORIES>)
         target_compile_options(${target} PRIVATE $<TARGET_PROPERTY:${lib},INTERFACE_COMPILE_OPTIONS>)
-        # This is not supported
+        # This is not supported, as it will make exporting ${target} also needs exporting ${lib} even in PRIVATE mode
         #target_link_libraries(${target} PRIVATE $<TARGET_PROPERTY:${lib},INTERFACE_LINK_LIBRARIES>)
+    endforeach()
+    foreach(lib IN LISTS TLOL_INTERFACE)
+        target_sources(${target} INTERFACE $<TARGET_OBJECTS:${lib}> $<TARGET_PROPERTY:${lib},INTERFACE_SOURCES>)
+        target_include_directories(${target} INTERFACE $<TARGET_PROPERTY:${lib},INTERFACE_INCLUDE_DIRECTORIES>)
+        target_compile_options(${target} INTERFACE $<TARGET_PROPERTY:${lib},INTERFACE_COMPILE_OPTIONS>)
+        target_link_libraries(${target} INTERFACE $<TARGET_PROPERTY:${lib},INTERFACE_LINK_LIBRARIES>)
+    endforeach()
+    foreach(lib IN LISTS TLOL_PUBLIC)
+        target_sources(${target} PUBLIC $<TARGET_OBJECTS:${lib}> $<TARGET_PROPERTY:${lib},INTERFACE_SOURCES>)
+        target_include_directories(${target} PUBLIC $<TARGET_PROPERTY:${lib},INTERFACE_INCLUDE_DIRECTORIES>)
+        target_compile_options(${target} PUBLIC $<TARGET_PROPERTY:${lib},INTERFACE_COMPILE_OPTIONS>)
     endforeach()
 endfunction()
