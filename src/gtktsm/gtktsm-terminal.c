@@ -937,7 +937,7 @@ static void renderer_blend(struct gtktsm_renderer *rend,
 }
 
 static int renderer_draw_cell(struct tsm_screen *screen,
-			      uint32_t id,
+			      uint64_t id,
 			      const uint32_t *ch,
 			      size_t len,
 			      unsigned int cwidth,
