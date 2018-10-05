@@ -1,0 +1,27 @@
+set(CTEST_PROJECT_NAME libtsm)
+
+set(CTEST_SOURCE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+set(CTEST_BINARY_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/build/ctest")
+
+set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+
+set(ENV{CK_FORK} "no")
+find_program(VALGRIND valgrind)
+if(NOT VALGRIND)
+    message(FATAL_ERROR "valgrind is required for memcheck")
+endif()
+set(CTEST_MEMORYCHECK_COMMAND "${VALGRIND}")
+string(CONCAT CTEST_MEMORYCHECK_COMMAND_OPTIONS
+    " --tool=memcheck"
+    " --leak-check=yes"
+    " --show-reachable=yes"
+    " --leak-resolution=high"
+    " --error-exitcode=1"
+)
+set(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CTEST_SOURCE_DIRECTORY}/etc/test.supp")
+
+ctest_start("Continuous")
+ctest_configure(OPTIONS -DBUILD_TESTING=ON)
+ctest_build()
+ctest_test()
+ctest_memcheck()
