@@ -31,7 +31,7 @@ find_library(${module_name}_LIBRARY
 
 set(${module_name}_VERSION "${PKG_${module_name}_VERSION}")
 if(NOT ${module_name}_VERSION)
-    set(${module_name}_VERSION ${${module_name}_${fphlc_comp}_VERSION})
+    set(${module_name}_VERSION ${${module_name}_VERSION})
 
     if(${module_name}_INCLUDE_DIR)
         file(STRINGS "${${module_name}_INCLUDE_DIR}/check.h" ${module_name}_MAJOR_VERSION REGEX "^#define CHECK_MAJOR_VERSION +\\(?([0-9]+)\\)?$")

@@ -21,7 +21,29 @@ string(CONCAT CTEST_MEMORYCHECK_COMMAND_OPTIONS
 set(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CTEST_SOURCE_DIRECTORY}/etc/test.supp")
 
 ctest_start("Continuous")
-ctest_configure(OPTIONS -DBUILD_TESTING=ON)
-ctest_build()
-ctest_test()
-ctest_memcheck()
+
+ctest_configure(OPTIONS "-DBUILD_TESTING=ON;-DBUILD_GTKTSM=ON" RETURN_VALUE ret)
+if(NOT ${ret} EQUAL 0)
+    message(FATAL_ERROR "Configure step failed with ${ret}")
+endif()
+
+ctest_build(RETURN_VALUE ret)
+if(NOT ${ret} EQUAL 0)
+    message(FATAL_ERROR "Build step failed with ${ret}")
+endif()
+
+ctest_test(RETURN_VALUE ret)
+if(NOT ${ret} EQUAL 0)
+    message(FATAL_ERROR "Test step failed with ${ret}")
+endif()
+
+# First make sure valgrind works
+ctest_memcheck(INCLUDE_LABEL "memcheck-xfail" RETURN_VALUE ret)
+if(${ret} EQUAL 0)
+    message(FATAL_ERROR "Valgrind may not work correctly. Expected failed test got passed.")
+endif()
+
+ctest_memcheck(EXCLUDE_LABEL "memcheck-xfail" RETURN_VALUE ret)
+if(NOT ${ret} EQUAL 0)
+    message(FATAL_ERROR "Memcheck step failed with ${ret}")
+endif()

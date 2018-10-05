@@ -30,3 +30,5 @@ ecm_add_test(test_valgrind
     LINK_LIBRARIES
         check::check
 )
+# mark the test as will fail in memcheck
+set_tests_properties(test_valgrind PROPERTIES LABELS memcheck-xfail)
