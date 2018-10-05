@@ -23,3 +23,8 @@ install:
 
 script:
   - ctest -VV -S ./ci.ctest
+
+# blocklist
+branches:
+  except:
+    - /^feature.*$/

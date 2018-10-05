@@ -68,55 +68,57 @@ function(print_target_properties tgt)
     endforeach(prop)
 endfunction(print_target_properties)
 
-# Add and initialize a thirdparty submodule
-#     Usage: add_submodule(<library_name> [THIRDPARTY_DIR <thirdparty_dir>] [PATCHES <patch>...])
-#     Args:
-#         <library_name> - The name and path of the library submodule to add
-#         <thirdparty_dir> - [Optional] The root directory for thirdparty code
-#         <patch> - [Optional] Additional patches to apply to the library
-function(add_submodule library_name)
-    set(options "")
-    set(oneValueArgs "THIRDPARTY_DIR")
-    set(multiValueArgs PATCHES)
-    cmake_parse_arguments(ADD_SUBMODULE
-        "${options}"
-        "${oneValueArgs}"
-        "${multiValueArgs}"
-        ${ARGN}
-        )
+# A simpler version to parse package components
+# Copied from extra-cmake-modules
+macro(find_package_parse_components module_name)
+    set(fppc_options)
+    set(fppc_oneValueArgs RESULT_VAR)
+    set(fppc_multiValueArgs KNOWN_COMPONENTS DEFAULT_COMPONENTS)
+    cmake_parse_arguments(FPPC "${fppc_options}" "${fppc_oneValueArgs}" "${fppc_multiValueArgs}" ${ARGN})
 
-    if(EXISTS ADD_SUBMODULE_THIRDPARTY_DIR)
-        set(third_party_dir ${ADD_SUBMODULE_THIRDPARTY_DIR})
-    else()
-        set(third_party_dir ${CMAKE_SOURCE_DIR}/thirdparty)
+    if(FPPC_UNPARSED_ARGUMENTS)
+        message(FATAL_ERROR "Unexpected arguments to find_package_parse_components: ${FPPC_UNPARSED_ARGUMENTS}")
+    endif()
+    if(NOT FPPC_RESULT_VAR)
+        message(FATAL_ERROR "Missing RESULT_VAR argument to find_package_parse_components")
+    endif()
+    if(NOT FPPC_KNOWN_COMPONENTS)
+        message(FATAL_ERROR "Missing KNOWN_COMPONENTS argument to find_package_parse_components")
+    endif()
+    if(NOT FPPC_DEFAULT_COMPONENTS)
+        set(FPPC_DEFAULT_COMPONENTS ${FPPC_KNOWN_COMPONENTS})
     endif()
 
-    if(NOT EXISTS ${third_party_dir}/${library_name}/CMakeLists.txt)
-        message(STATUS "   Initializing submodule")
-        execute_process(COMMAND "git" "submodule" "update" "--init" "${third_party_dir}/${library_name}"
-            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
-            RESULT_VARIABLE retcode
-            )
-        if(NOT "${retcode}" STREQUAL "0")
-            message(FATAL_ERROR "Failed to checkout ${library_name} as submodule: ${retcode}")
-        endif(NOT "${retcode}" STREQUAL "0")
+    if(${module_name}_FIND_COMPONENTS)
+        set(fppc_requestedComps ${${module_name}_FIND_COMPONENTS})
 
-        foreach(patch IN LISTS ADD_SUBMODULE_PATCHES)
-            message(STATUS "   Applying patch ${patch}")
-            get_filename_component(abs_patch ${patch} ABSOLUTE)
-            execute_process(COMMAND "git" "apply" "${abs_patch}"
-                WORKING_DIRECTORY "${third_party_dir}/${library_name}"
-                RESULT_VARIABLE retcode
-                )
-            if(NOT "${retcode}" STREQUAL "0")
-                message(FATAL_ERROR "Failed to intialize ${library_name} when applying ${abs_patch}: ${retcode}")
-            endif(NOT "${retcode}" STREQUAL "0")
-        endforeach(patch)
-    endif(NOT EXISTS ${third_party_dir}/${library_name}/CMakeLists.txt)
+        list(REMOVE_DUPLICATES fppc_requestedComps)
 
-    message("-- ${library_name} version: bundled")
-    add_subdirectory(${third_party_dir}/${library_name})
-endfunction(add_submodule)
+        # This makes sure components are listed in the same order as
+        # KNOWN_COMPONENTS (potentially important for inter-dependencies)
+        set(${FPPC_RESULT_VAR})
+        foreach(fppc_comp ${FPPC_KNOWN_COMPONENTS})
+            list(FIND fppc_requestedComps "${fppc_comp}" fppc_index)
+            if(NOT "${fppc_index}" STREQUAL "-1")
+                list(APPEND ${FPPC_RESULT_VAR} "${fppc_comp}")
+                list(REMOVE_AT fppc_requestedComps ${fppc_index})
+            endif()
+        endforeach()
+        # if there are any left, they are unknown components
+        if(fppc_requestedComps)
+            set(fppc_msgType STATUS)
+            if(${module_name}_FIND_REQUIRED)
+                set(fppc_msgType FATAL_ERROR)
+            endif()
+            if(NOT ${module_name}_FIND_QUIETLY)
+                message(${fppc_msgType} "${module_name}: requested unknown components ${fppc_requestedComps}")
+            endif()
+            return()
+        endif()
+    else()
+        set(${FPPC_RESULT_VAR} ${FPPC_DEFAULT_COMPONENTS})
+    endif()
+endmacro()
 
 #
 # Creates an imported library target for each component. See ECM's documentation for usage.

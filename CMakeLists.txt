@@ -58,10 +58,6 @@ list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake/modules/gnome-cmake/mo
 # GNU filesystem layout
 include(GNUInstallDirs)
 
-# Extra cmake helpers
-find_package(ECM REQUIRED NO_MODULE REQUIRED)
-list(APPEND CMAKE_MODULE_PATH ${ECM_MODULE_DIR} ${ECM_FIND_MODULE_DIR})
-
 # We need xkbcommon for keysym definitions. If it's not found, we use our own
 # private copy of xkbcommon-keysyms.h.
 find_package(XKBCommon COMPONENTS KeySyms)

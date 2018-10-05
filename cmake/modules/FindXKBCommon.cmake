@@ -16,10 +16,7 @@
 #   XKB::XKBCommon
 #   XKB::KeySyms
 #
-include(ECMFindModuleHelpersStub)
 include(FindPackageHandleStandardArgs)
-
-ecm_find_package_version_check(XKBCommon)
 
 # Note that this list needs to be ordered such that any component appears after its dependencies
 set(XKBCommon_known_components
@@ -38,7 +35,7 @@ set(XKBCommon_KeySyms_lib)
 set(XKBCommon_KeySyms_header "xkbcommon/xkbcommon-keysyms.h")
 
 # Parse components
-ecm_find_package_parse_components(XKBCommon
+find_package_parse_components(XKBCommon
     RESULT_VAR XKBCommon_components
     KNOWN_COMPONENTS ${XKBCommon_known_components}
 )
@@ -67,41 +64,6 @@ find_package_handle_standard_args(XKBCommon
 )
 
 unset(XKBCommon_component_FOUND_VARS)
-
-## Use pkg-config to get the directories and then use these values
-## in the FIND_PATH() and FIND_LIBRARY() calls
-#find_package(PkgConfig)
-#pkg_check_modules(PKG_XKB QUIET xkbcommon)
-#
-#set(XKBCommonKeySyms_DEFINITIONS ${PKG_XKB_CFLAGS_OTHER})
-#
-#find_path(XKBCommonKeySyms_INCLUDE_DIR
-#    NAMES
-#        xkbcommon/xkbcommon-keysyms.h
-#    HINTS
-#        ${PKG_XKB_INCLUDE_DIRS}
-#)
-#
-#set(XKBCommonKeySyms_INCLUDE_DIRS ${XKBCommonKeySyms_INCLUDE_DIR})
-#set(XKBCommonKeySyms_VERSION ${PKG_XKB_VERSION})
-#
-#include(FindPackageHandleStandardArgs)
-#find_package_handle_standard_args(XKB
-#    FOUND_VAR
-#        XKBCommonKeySyms_FOUND
-#    REQUIRED_VARS
-#        XKBCommonKeySyms_INCLUDE_DIRS
-#    VERSION_VAR
-#        XKBCommonKeySyms_VERSION
-#)
-#
-#if(XKBCommonKeySyms_FOUND AND NOT TARGET XKB::KeySyms)
-#    add_library(XKB::KeySyms INTERFACE IMPORTED)
-#    set_target_properties(XKB::KeySyms PROPERTIES
-#        INTERFACE_COMPILE_OPTIONS "${XKBCommonKeySyms_DEFINITIONS}"
-#        INTERFACE_INCLUDE_DIRECTORIES "${XKBCommonKeySyms_INCLUDE_DIRS}"
-#    )
-#endif()
 
 include(FeatureSummary)
 set_package_properties(XKBCommon PROPERTIES

@@ -7,9 +7,20 @@
 # need to have valgrind installed and libcheck running properly (without leaks)
 # to make the tests succeed.
 
-include(ECMAddTests)
+function(libtsm_add_test name)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs LINK_LIBRARIES)
+    cmake_parse_arguments(ARG "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
-ecm_add_test(test_htable
+    add_executable(${name} ${name})
+    if(ARG_LINK_LIBRARIES)
+        target_link_libraries(${name} ${ARG_LINK_LIBRARIES})
+    endif()
+    add_test(NAME ${name} COMMAND ${name})
+endfunction()
+
+libtsm_add_test(test_htable
     LINK_LIBRARIES
         check::check
 )
@@ -18,7 +29,7 @@ target_link_object_libraries(test_htable
         shl
 )
 
-ecm_add_test(test_symbol
+libtsm_add_test(test_symbol
     LINK_LIBRARIES
         tsm_test
         check::check
@@ -26,7 +37,7 @@ ecm_add_test(test_symbol
 
 # This is only a quick sanity check that verifies the
 # valgrind tests work properly.
-ecm_add_test(test_valgrind
+libtsm_add_test(test_valgrind
     LINK_LIBRARIES
         check::check
 )
