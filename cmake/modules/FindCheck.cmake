@@ -5,7 +5,7 @@
 #   Check_FOUND        - True if libcheck is available
 #   Check_LIBRARIES    - Found libraries for libcheck
 #   Check_INCLUDE_DIRS - Include directory for libcheck
-#   Check_DEFINITIONS  - Other compiler flags for using libcheck
+#   Check_CFLAGS       - Other compiler flags for using libcheck
 #   Check_VERSION      - Version of the found libcheck
 #
 # Additionally, the following imported targets will be defined:
@@ -16,7 +16,8 @@ include(FindPackageHandleStandardArgs)
 
 set(module_name Check)
 
-find_package(PkgConfig QUIET)
+# We rely on pkg-config to provide dependency info.
+find_package(PkgConfig REQUIRED QUIET)
 
 pkg_check_modules(PKG_${module_name} QUIET check)
 
@@ -25,7 +26,7 @@ find_path(${module_name}_INCLUDE_DIR
     HINTS ${PKG_${module_name}_INCLUDE_DIRS}
 )
 find_library(${module_name}_LIBRARY
-    NAMES check
+    NAMES check_pic check
     HINTS ${PKG_${module_name}_LIBRARY_DIRS}
 )
 
@@ -63,15 +64,25 @@ mark_as_advanced(
 )
 
 if(${module_name}_FOUND)
-    list(APPEND ${module_name}_LIBRARIES "${${module_name}_LIBRARY}")
+    list(APPEND ${module_name}_LIBRARIES "${PKG_${module_name}_LIBRARIES}")
+    list(APPEND ${module_name}_CFLAGS "${PKG_${module_name}_CFLAGS_OTHER}")
+    list(APPEND ${module_name}_LDFLAGS "${PKG_${module_name}_LDFLAGS_OTHER}")
+
+    message("PKG_${module_name}_LDFLAGS_OTHER = ${PKG_${module_name}_LDFLAGS_OTHER}")
+
+    if("-pthread" IN_LIST ${module_name}_LDFLAGS)
+        include(CMakeFindDependencyMacro)
+        find_dependency(Threads REQUIRED)
+        list(APPEND ${module_name}_LIBRARIES Threads::Threads)
+    endif()
+
     list(APPEND ${module_name}_INCLUDE_DIRS "${${module_name}_INCLUDE_DIR}")
-    list(APPEND ${module_name}_DEFINITIONS "${PKG_${module_name}_DEFINITIONS}")
     if(NOT TARGET check::check)
-        add_library(check::check UNKNOWN IMPORTED)
+        add_library(check::check INTERFACE IMPORTED)
         set_target_properties(check::check PROPERTIES
-            INTERFACE_COMPILE_OPTIONS "${${module_name}_DEFINITIONS}"
-            INTERFACE_INCLUDE_DIRECTORIES "${${module_name}_INCLUDE_DIR}"
-            IMPORTED_LOCATION "${${module_name}_LIBRARY}"
+            INTERFACE_COMPILE_OPTIONS "${${module_name}_CFLAGS}"
+            INTERFACE_INCLUDE_DIRECTORIES "${${module_name}_INCLUDE_DIRS}"
+            INTERFACE_LINK_LIBRARIES "${${module_name}_LIBRARIES}"
         )
     endif()
 endif()

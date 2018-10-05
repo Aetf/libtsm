@@ -15,7 +15,7 @@ function(libtsm_add_test name)
 
     add_executable(${name} ${name})
     if(ARG_LINK_LIBRARIES)
-        target_link_libraries(${name} ${ARG_LINK_LIBRARIES})
+        target_link_libraries(${name} PRIVATE ${ARG_LINK_LIBRARIES})
     endif()
     add_test(NAME ${name} COMMAND ${name})
 endfunction()
