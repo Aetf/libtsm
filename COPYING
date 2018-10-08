@@ -1,6 +1,7 @@
 = Authors =
 
 This software was written by:
+	Aetf <aetf@unlimitedcodeworks.xyz>
 	David Herrmann <dh.herrmann@gmail.com>
 	Ran Benita <ran234@gmail.com>
 
@@ -12,6 +13,7 @@ source file for the related copyright notice and license.
 If a file does not contain a copright notice, the following license shall
 apply:
 
+	Copyright (c) 2017-2018 Aetf <aetf@unlimitedcodeworks.xyz>
 	Copyright (c) 2011-2013 David Herrmann <dh.herrmann@gmail.com>
 
 	Permission is hereby granted, free of charge, to any person obtaining
@@ -34,6 +36,8 @@ apply:
 	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 == Third-Party Source ==
+Various cmake find modules in cmake/modules/gnome-cmake is from
+https://github.com/nemequ/gnome-cmake, see cmake/modules/gnome-cmake/COPYING
 
 The hash-table implementation in src/shared/shl-htable.* uses internally the
 htable from CCAN, see LICENSE_htable.

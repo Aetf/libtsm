@@ -53,11 +53,7 @@
 #include "libtsm-int.h"
 #include "shl-llog.h"
 
-#ifdef BUILD_HAVE_XKBCOMMON
-#  include <xkbcommon/xkbcommon-keysyms.h>
-#else
-#  include "external/xkbcommon-keysyms.h"
-#endif
+#include <xkbcommon/xkbcommon-keysyms.h>
 
 #define LLOG_SUBSYSTEM "tsm-vte"
 

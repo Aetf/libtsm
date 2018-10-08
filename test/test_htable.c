@@ -25,6 +25,7 @@
 
 
 #include "test_common.h"
+#include "shl-htable.h"
 
 static struct shl_htable ht = SHL_HTABLE_INIT_STR(ht);
 static struct shl_htable uht = SHL_HTABLE_INIT_ULONG(uht);
