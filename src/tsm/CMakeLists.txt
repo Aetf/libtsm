@@ -14,25 +14,32 @@ add_library(tsm_obj OBJECT
     tsm-vte.c
     tsm-vte-charsets.c
 )
-# Link to dependencies
-target_link_object_libraries(tsm_obj
-    PUBLIC
-        external
-        shl
-)
-if(XKBCommon_KeySyms_FOUND)
-    target_link_libraries(tsm_obj
-        INTERFACE
-            XKB::KeySyms
-    )
-endif()
 set_target_properties(tsm_obj PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     C_VISIBILITY_PRESET hidden
 )
 
+# Fix include path for tsm_obj because it can't directly link to
+# external and shl. TODO: remove after we require 3.12
+foreach(lib IN ITEMS external shl)
+    target_include_directories(tsm_obj PRIVATE $<TARGET_PROPERTY:${lib},INTERFACE_INCLUDE_DIRECTORIES>)
+endforeach()
+
 # Other non-compilation properties shared between tsm and tsm_test
 function(apply_properties target)
+    # TODO: set this on tsm_obj after we require 3.12
+    # Link to dependencies
+    target_link_object_libraries(${target}
+        PRIVATE
+            external
+            shl
+    )
+    if(XKBCommon_KeySyms_FOUND)
+        target_link_libraries(${target}
+            PRIVATE
+                XKB::KeySyms
+        )
+    endif()
     target_include_directories(${target}
         INTERFACE
             $<INSTALL_INTERFACE:include>

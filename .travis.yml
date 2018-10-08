@@ -16,9 +16,6 @@ compiler:
   - gcc
   - clang
 
-install:
-  - pip install --user --upgrade cmake
-
 script:
   - ctest -VV -S ./ci.ctest
 

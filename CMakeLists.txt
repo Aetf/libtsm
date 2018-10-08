@@ -1,14 +1,15 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.5)
 
 project(libtsm
     LANGUAGES C
     VERSION 4.0.0
-    DESCRIPTION "terminal-emulator state machine"
 )
 
 # Some meta data
 ## TODO: merge into project above after we require cmake 3.12
 set(PROJECT_HOMEPAGE_URL "https://github.com/Aetf/libtsm")
+## TODO: merge into project above after we require cmake 3.10
+set(PROJECT_DESCRIPTION "terminal-emulator state machine")
 
 #---------------------------------------------------------------------------------------
 # Initial setups
