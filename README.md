@@ -1,6 +1,6 @@
 # TSM - Terminal Emulator State Machine
 
-[![Build Status](https://travis-ci.com/Aetf/libtsm.svg?branch=develop)](https://travis-ci.com/Aetf/libtsm)
+[![Build Status](https://travis-ci.com/Aetf/libtsm.svg?branch=master)](https://travis-ci.com/Aetf/libtsm)
 
 TSM is a state machine for DEC VT100-VT520 compatible terminal emulators. It
 tries to support all common standards while keeping compatibility to existing
