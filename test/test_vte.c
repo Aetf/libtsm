@@ -45,8 +45,8 @@ static void write_cb(struct tsm_vte *vte, const char *u8, size_t len, void *data
 	UNUSED(len);
 	UNUSED(data);
 
-	ck_assert_ptr_nonnull(vte);
-	ck_assert_ptr_nonnull(u8);
+	ck_assert_ptr_ne(vte, NULL);
+	ck_assert_ptr_ne(u8, NULL);
 }
 
 START_TEST(test_vte_init)
