@@ -24,6 +24,8 @@
  */
 
 #include "test_common.h"
+#include "libtsm.h"
+#include "libtsm-int.h"
 
 START_TEST(test_symbol_null)
 {

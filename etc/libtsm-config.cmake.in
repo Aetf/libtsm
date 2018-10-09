@@ -1,0 +1,13 @@
+#
+# libtsm
+# ------
+#
+# The following imported targets are created:
+#     libtsm::libtsm
+#
+
+@PACKAGE_INIT@
+
+if(NOT TARGET libtsm::tsm)
+    include("${CMAKE_CURRENT_LIST_DIR}/libtsm-targets.cmake")
+endif()

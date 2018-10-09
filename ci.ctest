@@ -1,0 +1,63 @@
+set(CTEST_PROJECT_NAME libtsm)
+
+set(CTEST_SOURCE_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+set(CTEST_BINARY_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/build/ctest")
+
+set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+
+set(ENV{CK_FORK} "no")
+find_program(VALGRIND valgrind)
+if(NOT VALGRIND)
+    message(FATAL_ERROR "valgrind is required for memcheck")
+endif()
+set(CTEST_MEMORYCHECK_COMMAND "${VALGRIND}")
+string(CONCAT CTEST_MEMORYCHECK_COMMAND_OPTIONS
+    " --tool=memcheck"
+    " --leak-check=yes"
+    " --show-reachable=yes"
+    " --leak-resolution=high"
+    " --error-exitcode=1"
+)
+set(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "${CTEST_SOURCE_DIRECTORY}/etc/test.supp")
+
+function(print_section name)
+    message(STATUS "********************")
+    message(STATUS "${name}")
+    message(STATUS "********************")
+endfunction()
+
+#
+# Start the tests
+#
+ctest_start("Continuous")
+
+print_section("Configuring project")
+ctest_configure(OPTIONS "-DBUILD_TESTING=ON;-DBUILD_GTKTSM=ON" RETURN_VALUE ret)
+if(NOT ${ret} EQUAL 0)
+    message(FATAL_ERROR "Configure step failed with ${ret}")
+endif()
+
+print_section("Building project")
+ctest_build(RETURN_VALUE ret)
+if(NOT ${ret} EQUAL 0)
+    message(FATAL_ERROR "Build step failed with ${ret}")
+endif()
+
+print_section("Running tests")
+ctest_test(RETURN_VALUE ret)
+if(NOT ${ret} EQUAL 0)
+    message(FATAL_ERROR "Tests step failed with ${ret}")
+endif()
+
+# First make sure valgrind works
+print_section("Making sure valgrind works")
+ctest_memcheck(INCLUDE_LABEL "memcheck-xfail" RETURN_VALUE ret)
+if(${ret} EQUAL 0)
+    message(FATAL_ERROR "Valgrind may not work correctly. Expected failed test got passed.")
+endif()
+
+print_section("Running memcheck")
+ctest_memcheck(EXCLUDE_LABEL "memcheck-xfail" RETURN_VALUE ret)
+if(NOT ${ret} EQUAL 0)
+    message(FATAL_ERROR "Memcheck step failed with ${ret}")
+endif()

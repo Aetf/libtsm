@@ -1,6 +1,7 @@
 /*
  * TSM - Main Header
  *
+ * Copyright (c) 2018 Aetf <aetf@unlimitedcodeworks.xyz>
  * Copyright (c) 2011-2013 David Herrmann <dh.herrmann@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -30,6 +31,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,14 +66,14 @@ extern "C" {
 /**
  * Logging Callback
  *
- * @data: user-provided data
- * @file: Source code file where the log message originated or NULL
- * @line: Line number in source code or 0
- * @func: C function name or NULL
- * @subs: Subsystem where the message came from or NULL
- * @sev: Kernel-style severity between 0=FATAL and 7=DEBUG
- * @format: printf-formatted message
- * @args: arguments for printf-style @format
+ * @param data: User-provided data
+ * @param file: Source code file where the log message originated or NULL
+ * @param line: Line number in source code or 0
+ * @param func: C function name or NULL
+ * @param subs: Subsystem where the message came from or NULL
+ * @param sev: Kernel-style severity between 0=FATAL and 7=DEBUG
+ * @param format: Printf-formatted message
+ * @param args: Arguments for printf-style @p format
  *
  * This is the type of a logging callback function. You can always pass NULL
  * instead of such a function to disable logging.
@@ -294,6 +296,30 @@ enum tsm_vte_modifier {
 /* keep in sync with TSM_INPUT_INVALID */
 #define TSM_VTE_INVALID 0xffffffff
 
+enum tsm_vte_color {
+	TSM_COLOR_BLACK,
+	TSM_COLOR_RED,
+	TSM_COLOR_GREEN,
+	TSM_COLOR_YELLOW,
+	TSM_COLOR_BLUE,
+	TSM_COLOR_MAGENTA,
+	TSM_COLOR_CYAN,
+	TSM_COLOR_LIGHT_GREY,
+	TSM_COLOR_DARK_GREY,
+	TSM_COLOR_LIGHT_RED,
+	TSM_COLOR_LIGHT_GREEN,
+	TSM_COLOR_LIGHT_YELLOW,
+	TSM_COLOR_LIGHT_BLUE,
+	TSM_COLOR_LIGHT_MAGENTA,
+	TSM_COLOR_LIGHT_CYAN,
+	TSM_COLOR_WHITE,
+
+	TSM_COLOR_FOREGROUND,
+	TSM_COLOR_BACKGROUND,
+
+	TSM_COLOR_NUM
+};
+
 typedef void (*tsm_vte_write_cb) (struct tsm_vte *vte,
 				  const char *u8,
 				  size_t len,
@@ -312,7 +338,72 @@ void tsm_vte_unref(struct tsm_vte *vte);
 
 void tsm_vte_set_osc_cb(struct tsm_vte *vte, tsm_vte_osc_cb osc_cb, void *osc_data);
 
-int tsm_vte_set_palette(struct tsm_vte *vte, const char *palette);
+/**
+ * @brief Set color palette to one of the predefined palette on the vte object.
+ *
+ * Current supported palette names are
+ *
+ * - solarized
+ * - solarized-black
+ * - solarized-white
+ * - soft-black
+ * - base16-dark
+ * - base16-light
+ *
+ * In addition, when palette name is "custom", the custom palette set in
+ * tsm_vte_set_custom_palette() is used.
+ *
+ * @sa tsm_vte_set_custom_palette to set custom palette.
+ *
+ * @param vte The vte object to set on.
+ * @param palette_name Name of the color palette. Pass NULL to reset to default.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if vte is NULL.
+ * @retval -ENOMEM if malloc fails.
+ */
+int tsm_vte_set_palette(struct tsm_vte *vte, const char *palette_name);
+
+/**
+ * @brief Set a custom palette on the vte object.
+ *
+ * An example:
+ *
+ * @code
+ * static uint8_t color_palette[TSM_COLOR_NUM][3] = {
+ * 	[TSM_COLOR_BLACK]         = { 0x00, 0x00, 0x00 },
+ * 	[TSM_COLOR_RED]           = { 0xab, 0x46, 0x42 },
+ * 	[TSM_COLOR_GREEN]         = { 0xa1, 0xb5, 0x6c },
+ * 	[TSM_COLOR_YELLOW]        = { 0xf7, 0xca, 0x88 },
+ * 	[TSM_COLOR_BLUE]          = { 0x7c, 0xaf, 0xc2 },
+ * 	[TSM_COLOR_MAGENTA]       = { 0xba, 0x8b, 0xaf },
+ * 	[TSM_COLOR_CYAN]          = { 0x86, 0xc1, 0xb9 },
+ * 	[TSM_COLOR_LIGHT_GREY]    = { 0xaa, 0xaa, 0xaa },
+ * 	[TSM_COLOR_DARK_GREY]     = { 0x55, 0x55, 0x55 },
+ * 	[TSM_COLOR_LIGHT_RED]     = { 0xab, 0x46, 0x42 },
+ * 	[TSM_COLOR_LIGHT_GREEN]   = { 0xa1, 0xb5, 0x6c },
+ *	[TSM_COLOR_LIGHT_YELLOW]  = { 0xf7, 0xca, 0x88 },
+ * 	[TSM_COLOR_LIGHT_BLUE]    = { 0x7c, 0xaf, 0xc2 },
+ * 	[TSM_COLOR_LIGHT_MAGENTA] = { 0xba, 0x8b, 0xaf },
+ * 	[TSM_COLOR_LIGHT_CYAN]    = { 0x86, 0xc1, 0xb9 },
+ * 	[TSM_COLOR_WHITE]         = { 0xff, 0xff, 0xff },
+ *
+ * 	[TSM_COLOR_FOREGROUND]    = { 0x18, 0x18, 0x18 },
+ * 	[TSM_COLOR_BACKGROUND]    = { 0xd8, 0xd8, 0xd8 },
+ * };
+ * @endcode
+ *
+ * The palette array is copied into the vte object.
+ *
+ * @param vte The vte object to set on
+ * @param palette The palette array, which should have shape `uint8_t palette[TSM_COLOR_NUM][3]`. Pass NULL to clear.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if vte is NULL.
+ * @retval -ENOMEM if malloc fails.
+ */
+int tsm_vte_set_custom_palette(struct tsm_vte *vte, uint8_t (*palette)[3]);
+
 void tsm_vte_get_def_attr(struct tsm_vte *vte, struct tsm_screen_attr *out);
 
 void tsm_vte_reset(struct tsm_vte *vte);

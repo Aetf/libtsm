@@ -99,8 +99,6 @@ global:
 	tsm_screen_selection_target;
 	tsm_screen_selection_copy;
 
-	tsm_screen_draw;
-
 	tsm_vte_new;
 	tsm_vte_ref;
 	tsm_vte_unref;
@@ -115,3 +113,10 @@ global:
 	tsm_vte_input;
 	tsm_vte_handle_keyboard;
 } LIBTSM_2;
+
+LIBTSM_4 {
+global:
+	tsm_screen_draw;
+
+    tsm_vte_set_custom_palette;
+} LIBTSM_3;
