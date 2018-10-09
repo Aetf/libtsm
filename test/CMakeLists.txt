@@ -35,6 +35,12 @@ libtsm_add_test(test_symbol
         check::check
 )
 
+libtsm_add_test(test_screen
+    LINK_LIBRARIES
+        tsm_test
+        check::check
+)
+
 libtsm_add_test(test_vte
     LINK_LIBRARIES
         tsm_test
