@@ -66,14 +66,14 @@ extern "C" {
 /**
  * Logging Callback
  *
- * @data: user-provided data
- * @file: Source code file where the log message originated or NULL
- * @line: Line number in source code or 0
- * @func: C function name or NULL
- * @subs: Subsystem where the message came from or NULL
- * @sev: Kernel-style severity between 0=FATAL and 7=DEBUG
- * @format: printf-formatted message
- * @args: arguments for printf-style @format
+ * @param data: User-provided data
+ * @param file: Source code file where the log message originated or NULL
+ * @param line: Line number in source code or 0
+ * @param func: C function name or NULL
+ * @param subs: Subsystem where the message came from or NULL
+ * @param sev: Kernel-style severity between 0=FATAL and 7=DEBUG
+ * @param format: Printf-formatted message
+ * @param args: Arguments for printf-style @p format
  *
  * This is the type of a logging callback function. You can always pass NULL
  * instead of such a function to disable logging.
@@ -351,13 +351,16 @@ void tsm_vte_set_osc_cb(struct tsm_vte *vte, tsm_vte_osc_cb osc_cb, void *osc_da
  * - base16-light
  *
  * In addition, when palette name is "custom", the custom palette set in
- * @link tsm_vte_set_custom_palette is used.
+ * tsm_vte_set_custom_palette() is used.
  *
  * @sa tsm_vte_set_custom_palette to set custom palette.
  *
- * @param vte The vte object to set on
+ * @param vte The vte object to set on.
  * @param palette_name Name of the color palette. Pass NULL to reset to default.
- * @return 0 on success. -EINVAL if vte is NULL. -ENOMEM if malloc fails.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if vte is NULL.
+ * @retval -ENOMEM if malloc fails.
  */
 int tsm_vte_set_palette(struct tsm_vte *vte, const char *palette_name);
 
@@ -393,8 +396,11 @@ int tsm_vte_set_palette(struct tsm_vte *vte, const char *palette_name);
  * The palette array is copied into the vte object.
  *
  * @param vte The vte object to set on
- * @param palette The palette array, which should has shape uint8_t palette[TSM_COLOR_NUM][3].
- * @return 0 on success. -EINVAL if vte is NULL. -ENOMEM if malloc fails.
+ * @param palette The palette array, which should have shape `uint8_t palette[TSM_COLOR_NUM][3]`. Pass NULL to clear.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL if vte is NULL.
+ * @retval -ENOMEM if malloc fails.
  */
 int tsm_vte_set_custom_palette(struct tsm_vte *vte, uint8_t (*palette)[3]);
 
