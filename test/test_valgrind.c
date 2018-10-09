@@ -32,7 +32,7 @@ START_TEST(test_valgrind)
 	void *p;
 
 	p = malloc(0x100);
-	ck_assert(!!p);
+	ck_assert_ptr_ne(p, NULL);
 }
 END_TEST
 

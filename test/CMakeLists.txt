@@ -35,6 +35,12 @@ libtsm_add_test(test_symbol
         check::check
 )
 
+libtsm_add_test(test_vte
+    LINK_LIBRARIES
+        tsm_test
+        check::check
+)
+
 # This is only a quick sanity check that verifies the
 # valgrind tests work properly.
 libtsm_add_test(test_valgrind

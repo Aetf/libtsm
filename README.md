@@ -9,7 +9,11 @@ emulators like xterm, gnome-terminal, konsole, ...
 This is a personal modified version. For more information, please refer to its original [README](README).
 
 ## Added feature
-+ Add soft-black and [base16](https://github.com/chriskempson/base16-default-schemes)-light and -dark color palettes
++ More color palettes:
+    * soft-black
+    * [base16](https://github.com/chriskempson/base16-default-schemes){-light,-dark}
+    * solarized{,-black,-white}
+    * custom: set via API
 + Support underline/italic rendering (with [a patched version of kmscon](https://github.com/Aetf/kmscon))
 + Support 24-bit true color
 + Support Ctrl + Arrow keys
@@ -49,7 +53,7 @@ The following options are available:
 
 The test suits needs:
 
-- [check](https://libcheck.github.io/check/)
+- [check](https://libcheck.github.io/check/) >= 0.9.10
 
 The gtktsm example needs:
 
