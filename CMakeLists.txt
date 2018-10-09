@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 
 project(libtsm
     LANGUAGES C
-    VERSION 4.0.0
+    VERSION 4.0.1
 )
 
 # Some meta data
