@@ -64,7 +64,11 @@ apply_properties(tsm)
 # The production library additionally use version script
 set_property(TARGET tsm APPEND_STRING
     PROPERTY
-    LINK_FLAGS " -Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/libtsm.sym\""
+        LINK_FLAGS " -Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/libtsm.sym\""
+)
+set_property(TARGET tsm APPEND
+    PROPERTY
+        LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/libtsm.sym"
 )
 
 # Add an alias so that library can be used inside the build tree
