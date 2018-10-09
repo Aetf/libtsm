@@ -1,6 +1,7 @@
 /*
  * TSM - Main internal header
  *
+ * Copyright (c) 2018 Aetf <aetf@unlimitedcodeworks.xyz>
  * Copyright (c) 2011-2013 David Herrmann <dh.herrmann@gmail.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
@@ -29,6 +30,7 @@
 #include <inttypes.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include "libtsm.h"
 #include "shl-llog.h"
 
