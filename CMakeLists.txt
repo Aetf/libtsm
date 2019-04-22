@@ -165,7 +165,7 @@ write_basic_package_version_file(
 )
 
 configure_package_config_file(
-    ${CMAKE_SOURCE_DIR}/etc/libtsm-config.cmake.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/etc/libtsm-config.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/libtsm-config.cmake
     PATH_VARS
         INSTALL_CMAKEDIR
