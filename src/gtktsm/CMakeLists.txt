@@ -12,10 +12,10 @@ target_link_libraries(gtktsm
         tsm
 
         m
-        gtk-3
-        cairo
-        pango-1.0
-        pangocairo
+        PkgConfig::GTK3
+        PkgConfig::Cairo
+        PkgConfig::Pango
+        PkgConfig::PangoCairo
         XKB::XKBCommon
 )
 target_link_object_libraries(gtktsm

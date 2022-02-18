@@ -36,9 +36,6 @@ apply:
 	SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 == Third-Party Source ==
-Various cmake find modules in cmake/modules/gnome-cmake is from
-https://github.com/nemequ/gnome-cmake, see cmake/modules/gnome-cmake/COPYING
-
 The hash-table implementation in src/shared/shl-htable.* uses internally the
 htable from CCAN, see LICENSE_htable.
 
