@@ -1370,7 +1370,7 @@ static gboolean terminal_key_fn(GtkWidget *widget,
 		mods |= TSM_LOGO_MASK;
 
 	if (!p->keymap)
-		p->keymap = gdk_keymap_get_default();
+		p->keymap = gdk_keymap_get_for_display(gtk_widget_get_display(widget));
 
 	b = gdk_keymap_translate_keyboard_state(p->keymap,
 						e->hardware_keycode,
