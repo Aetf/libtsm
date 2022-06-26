@@ -114,6 +114,11 @@ struct tsm_screen {
 	/* default attributes for new cells */
 	struct tsm_screen_attr def_attr;
 
+	/* save default attributes of main screen here when we switch to alt screen
+	 * on resize of the alt screen we need to init the new cells of the main
+	 * screen with these attributes and not the ones of the alt screen */
+	struct tsm_screen_attr def_attr_main;
+
 	/* ageing */
 	tsm_age_t age_cnt;		/* current age counter */
 	unsigned int age_reset : 1;	/* age-overflow flag */
