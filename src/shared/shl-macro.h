@@ -20,6 +20,11 @@
 #include <string.h>
 #include <unistd.h>
 
+/* macOS compatibility */
+#if !defined static_assert
+#define static_assert _Static_assert
+#endif
+
 /* sanity checks required for some macros */
 #if __SIZEOF_POINTER__ != 4 && __SIZEOF_POINTER__ != 8
 #error "Pointer size is neither 4 nor 8 bytes"

@@ -62,6 +62,7 @@ add_library(tsm)
 target_link_object_libraries(tsm PRIVATE tsm_obj)
 apply_properties(tsm)
 # The production library additionally use version script
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 set_property(TARGET tsm APPEND_STRING
     PROPERTY
         LINK_FLAGS " -Wl,--version-script=\"${CMAKE_CURRENT_SOURCE_DIR}/libtsm.sym\""
@@ -70,6 +71,7 @@ set_property(TARGET tsm APPEND
     PROPERTY
         LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/libtsm.sym"
 )
+endif()
 
 # Add an alias so that library can be used inside the build tree
 add_library(libtsm::tsm ALIAS tsm)
