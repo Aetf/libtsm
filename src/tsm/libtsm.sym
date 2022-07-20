@@ -118,5 +118,10 @@ LIBTSM_4 {
 global:
 	tsm_screen_draw;
 
-    tsm_vte_set_custom_palette;
+	tsm_vte_set_custom_palette;
 } LIBTSM_3;
+
+LIBTSM_4_1 {
+global:
+	tsm_vte_set_backspace_sends_delete;
+} LIBTSM_4;
