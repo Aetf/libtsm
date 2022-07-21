@@ -27,6 +27,8 @@
 #include "libtsm.h"
 #include "test_common.h"
 
+#include <xkbcommon/xkbcommon-keysyms.h>
+
 static void log_cb(void *data, const char *file, int line, const char *func, const char *subs,
 				   unsigned int sev, const char *format, va_list args)
 {
@@ -157,10 +159,57 @@ START_TEST(test_vte_custom_palette)
 }
 END_TEST
 
+static void checking_write_cb(struct tsm_vte *vte, const char *u8, size_t len, void *data)
+{
+	ck_assert_ptr_ne(vte, NULL);
+	ck_assert_ptr_ne(u8, NULL);
+	ck_assert_uint_gt(len, 0);
+
+	ck_assert_mem_eq(u8, data, len);
+}
+
+START_TEST(test_vte_backspace_key)
+{
+	struct tsm_screen *screen;
+	struct tsm_vte *vte;
+	char expected_output;
+	int r;
+
+	r = tsm_screen_new(&screen, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_new(&vte, screen, checking_write_cb, &expected_output, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	expected_output = '\010';
+	r = tsm_vte_handle_keyboard(vte, XKB_KEY_BackSpace, 010, 0, 010);
+	ck_assert(r);
+	r = tsm_vte_handle_keyboard(vte, XKB_KEY_BackSpace, 0177, 0, 0177);
+	ck_assert(r);
+
+	tsm_vte_set_backspace_sends_delete(vte, true);
+
+	expected_output = '\177';
+	r = tsm_vte_handle_keyboard(vte, XKB_KEY_BackSpace, 010, 0, 010);
+	ck_assert(r);
+	r = tsm_vte_handle_keyboard(vte, XKB_KEY_BackSpace, 0177, 0, 0177);
+	ck_assert(r);
+
+	tsm_vte_set_backspace_sends_delete(vte, false);
+
+	expected_output = '\010';
+	r = tsm_vte_handle_keyboard(vte, XKB_KEY_BackSpace, 010, 0, 010);
+	ck_assert(r);
+	r = tsm_vte_handle_keyboard(vte, XKB_KEY_BackSpace, 0177, 0, 0177);
+	ck_assert(r);
+}
+END_TEST
+
 TEST_DEFINE_CASE(misc)
 	TEST(test_vte_init)
-    TEST(test_vte_null)
-    TEST(test_vte_custom_palette)
+	TEST(test_vte_null)
+	TEST(test_vte_custom_palette)
+	TEST(test_vte_backspace_key)
 TEST_END_CASE
 
 // clang-format off

@@ -409,6 +409,19 @@ void tsm_vte_get_def_attr(struct tsm_vte *vte, struct tsm_screen_attr *out);
 void tsm_vte_reset(struct tsm_vte *vte);
 void tsm_vte_hard_reset(struct tsm_vte *vte);
 void tsm_vte_input(struct tsm_vte *vte, const char *u8, size_t len);
+
+/**
+ * @brief Set backspace key to send either backspace or delete.
+ *
+ * Some terminals send ASCII backspace (010, 8, 0x08), some send ASCII delete
+ * (0177, 127, 0x7f).
+ *
+ * The default for vte is to send ASCII backspace.
+ *
+ * @param vte The vte object to set on
+ * @param enable Send ASCII delete if \c true, send ASCII backspace if \c false.
+ */
+void tsm_vte_set_backspace_sends_delete(struct tsm_vte *vte, bool enable);
 bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 			     uint32_t ascii, unsigned int mods,
 			     uint32_t unicode);

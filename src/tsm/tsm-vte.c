@@ -155,6 +155,7 @@ struct tsm_vte {
 	tsm_vte_write_cb write_cb;
 	void *data;
 	char *palette_name;
+	bool backspace_sends_delete;
 
 	struct tsm_utf8_mach *mach;
 	unsigned long parse_cnt;
@@ -442,6 +443,7 @@ int tsm_vte_new(struct tsm_vte **out, struct tsm_screen *con,
 	vte->con = con;
 	vte->write_cb = write_cb;
 	vte->data = data;
+	vte->backspace_sends_delete = false;
 	vte->osc_cb = NULL;
 	vte->osc_data = NULL;
 	vte->custom_palette_storage = NULL;
@@ -2390,6 +2392,12 @@ void tsm_vte_input(struct tsm_vte *vte, const char *u8, size_t len)
 }
 
 SHL_EXPORT
+void tsm_vte_set_backspace_sends_delete(struct tsm_vte *vte, bool enable)
+{
+	vte->backspace_sends_delete = enable;
+}
+
+SHL_EXPORT
 bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 			     uint32_t ascii, unsigned int mods,
 			     uint32_t unicode)
@@ -2569,7 +2577,10 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 
 	switch (keysym) {
 		case XKB_KEY_BackSpace:
-			vte_write(vte, "\x08", 1);
+			if (vte->backspace_sends_delete)
+				vte_write(vte, "\x7f", 1);
+			else
+				vte_write(vte, "\x08", 1);
 			return true;
 		case XKB_KEY_Tab:
 		case XKB_KEY_KP_Tab:
