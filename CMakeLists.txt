@@ -21,6 +21,7 @@ endif()
 
 # Include utilities
 include(cmake/Utilities.cmake)
+include(cmake/JoinPaths.cmake)
 # For feature_summary
 include(FeatureSummary)
 
@@ -142,6 +143,8 @@ endif(BUILD_TESTING)
 # Installation of other files
 #---------------------------------------------------------------------------------------
 # pkgconfig file for backward compatibility
+join_paths(libdir_for_pc_file "\${exec_prefix}" "${CMAKE_INSTALL_LIBDIR}")
+join_paths(includedir_for_pc_file "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}")
 configure_file(etc/libtsm.pc.in ${CMAKE_CURRENT_BINARY_DIR}/libtsm.pc @ONLY)
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libtsm.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 
