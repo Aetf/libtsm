@@ -1604,3 +1604,32 @@ void tsm_screen_erase_screen(struct tsm_screen *con, bool protect)
 	screen_erase_region(con, 0, 0, con->size_x - 1, con->size_y - 1,
 			     protect);
 }
+
+void screen_fill(struct tsm_screen *con, tsm_symbol_t ch,
+		     const struct tsm_screen_attr *attr)
+{
+	unsigned int len, x, y;
+	struct line *line;
+	struct cell cell;
+
+	if (!con)
+		return;
+
+	len = tsm_symbol_get_width(con->sym_table, ch);
+	if (len != 1)
+		return;
+
+	screen_inc_age(con);
+
+	cell.ch = ch;
+	cell.width = len;
+	memcpy(&cell.attr, attr, sizeof(cell.attr));
+	cell.age = con->age_cnt;
+
+	for (y = 0; y < con->size_y; ++y) {
+		line = con->lines[y];
+		for (x = 0; x < con->size_x; ++x) {
+			memcpy(&line->cells[x], &cell, sizeof(line->cells[x]));
+		}
+	}
+}

@@ -152,6 +152,8 @@ struct tsm_screen {
 };
 
 void screen_cell_init(struct tsm_screen *con, struct cell *cell);
+void screen_fill(struct tsm_screen *con, tsm_symbol_t ch,
+		 const struct tsm_screen_attr *attr);
 
 void tsm_screen_set_opts(struct tsm_screen *scr, unsigned int opts);
 void tsm_screen_reset_opts(struct tsm_screen *scr, unsigned int opts);
