@@ -110,12 +110,18 @@ static void move_cursor(struct tsm_screen *con, unsigned int x, unsigned int y)
 	c->age = con->age_cnt;
 }
 
-void screen_cell_init(struct tsm_screen *con, struct cell *cell)
+void screen_cell_init_generic(struct tsm_screen *con, struct cell *cell, struct tsm_screen_attr *attr)
 {
 	cell->ch = 0;
 	cell->width = 1;
 	cell->age = con->age_cnt;
-	memcpy(&cell->attr, &con->def_attr, sizeof(cell->attr));
+
+	memcpy(&cell->attr, attr, sizeof(cell->attr));
+}
+
+void screen_cell_init(struct tsm_screen *con, struct cell *cell)
+{
+	screen_cell_init_generic(con, cell, &con->def_attr);
 }
 
 static int line_new(struct tsm_screen *con, struct line **out,
@@ -658,7 +664,6 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 			ret = line_resize(con, con->main_lines[i], x);
 			if (ret)
 				return ret;
-
 			ret = line_resize(con, con->alt_lines[i], x);
 			if (ret)
 				return ret;
@@ -678,7 +683,8 @@ int tsm_screen_resize(struct tsm_screen *con, unsigned int x,
 			i = start;
 
 		for ( ; i < con->main_lines[j]->size; ++i)
-			screen_cell_init(con, &con->main_lines[j]->cells[i]);
+			screen_cell_init_generic(con, &con->main_lines[j]->cells[i],
+				&con->def_attr_main);
 
 		/* alt-lines never go into SB, only clear visible cells */
 		i = 0;
@@ -918,7 +924,6 @@ void tsm_screen_set_def_attr(struct tsm_screen *con,
 {
 	if (!con || !attr)
 		return;
-
 	memcpy(&con->def_attr, attr, sizeof(*attr));
 }
 
@@ -963,6 +968,9 @@ void tsm_screen_set_flags(struct tsm_screen *con, unsigned int flags)
 	if (!(old & TSM_SCREEN_ALTERNATE) && (flags & TSM_SCREEN_ALTERNATE)) {
 		con->age = con->age_cnt;
 		con->lines = con->alt_lines;
+
+		/* save attributes of main screen when we switch to alt screen */
+		memcpy(&con->def_attr_main, &con->def_attr, sizeof(con->def_attr));
 	}
 
 	if (!(old & TSM_SCREEN_HIDE_CURSOR) &&
