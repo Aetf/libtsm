@@ -90,7 +90,7 @@ static inline int test_run_suite(Suite *s)
 	SRunner *sr;
 
 	sr = srunner_create(s);
-	srunner_run_all(sr, CK_NORMAL);
+	srunner_run_all(sr, CK_ENV);
 	ret = srunner_ntests_failed(sr);
 	srunner_free(sr);
 
