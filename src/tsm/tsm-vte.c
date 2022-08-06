@@ -117,26 +117,6 @@ enum parser_action {
 /* max length of an OSC code */
 #define OSC_MAX_LEN 128
 
-/* terminal flags */
-#define FLAG_CURSOR_KEY_MODE			0x00000001 /* DEC cursor key mode */
-#define FLAG_KEYPAD_APPLICATION_MODE		0x00000002 /* DEC keypad application mode; TODO: toggle on numlock? */
-#define FLAG_LINE_FEED_NEW_LINE_MODE		0x00000004 /* DEC line-feed/new-line mode */
-#define FLAG_8BIT_MODE				0x00000008 /* Disable UTF-8 mode and enable 8bit compatible mode */
-#define FLAG_7BIT_MODE				0x00000010 /* Disable 8bit mode and use 7bit compatible mode */
-#define FLAG_USE_C1				0x00000020 /* Explicitly use 8bit C1 codes; TODO: implement */
-#define FLAG_KEYBOARD_ACTION_MODE		0x00000040 /* Disable keyboard; TODO: implement? */
-#define FLAG_INSERT_REPLACE_MODE		0x00000080 /* Enable insert mode */
-#define FLAG_SEND_RECEIVE_MODE			0x00000100 /* Disable local echo */
-#define FLAG_TEXT_CURSOR_MODE			0x00000200 /* Show cursor */
-#define FLAG_INVERSE_SCREEN_MODE		0x00000400 /* Inverse colors */
-#define FLAG_ORIGIN_MODE			0x00000800 /* Relative origin for cursor */
-#define FLAG_AUTO_WRAP_MODE			0x00001000 /* Auto line wrap mode */
-#define FLAG_AUTO_REPEAT_MODE			0x00002000 /* Auto repeat key press; TODO: implement */
-#define FLAG_NATIONAL_CHARSET_MODE		0x00004000 /* Send keys from nation charsets; TODO: implement */
-#define FLAG_BACKGROUND_COLOR_ERASE_MODE	0x00008000 /* Set background color on erase (bce) */
-#define FLAG_PREPEND_ESCAPE			0x00010000 /* Prepend escape character to next output */
-#define FLAG_TITE_INHIBIT_MODE			0x00020000 /* Prevent switching to alternate screen buffer */
-
 struct vte_saved_state {
 	unsigned int cursor_x;
 	unsigned int cursor_y;
@@ -571,12 +551,18 @@ void tsm_vte_get_def_attr(struct tsm_vte *vte, struct tsm_screen_attr *out)
 	memcpy(out, &vte->def_attr, sizeof(*out));
 }
 
+SHL_EXPORT
+unsigned int tsm_vte_get_flags(struct tsm_vte *vte)
+{
+	return vte->flags;
+}
+
 /*
  * Write raw byte-stream to pty.
  * When writing data to the client we must make sure that we send the correct
  * encoding. For backwards-compatibility reasons we should always send 7bit
- * characters exclusively. However, when FLAG_7BIT_MODE is not set, then we can
- * also send raw 8bit characters. For instance, in FLAG_8BIT_MODE we can use the
+ * characters exclusively. However, when TSM_VTE_FLAG_7BIT_MODE is not set, then we can
+ * also send raw 8bit characters. For instance, in TSM_VTE_FLAG_8BIT_MODE we can use the
  * GR characters as keyboard input and send them directly or even use the C1
  * escape characters. In unicode mode (default) we can send multi-byte utf-8
  * characters which are also 8bit. When sending these characters, set the \raw
@@ -621,17 +607,17 @@ static void vte_write_debug(struct tsm_vte *vte, const char *u8, size_t len,
 #endif
 
 	/* in local echo mode, directly parse the data again */
-	if (!vte->parse_cnt && !(vte->flags & FLAG_SEND_RECEIVE_MODE)) {
-		if (vte->flags & FLAG_PREPEND_ESCAPE)
+	if (!vte->parse_cnt && !(vte->flags & TSM_VTE_FLAG_SEND_RECEIVE_MODE)) {
+		if (vte->flags & TSM_VTE_FLAG_PREPEND_ESCAPE)
 			tsm_vte_input(vte, "\e", 1);
 		tsm_vte_input(vte, u8, len);
 	}
 
-	if (vte->flags & FLAG_PREPEND_ESCAPE)
+	if (vte->flags & TSM_VTE_FLAG_PREPEND_ESCAPE)
 		vte->write_cb(vte, "\e", 1, vte->data);
 	vte->write_cb(vte, u8, len, vte->data);
 
-	vte->flags &= ~FLAG_PREPEND_ESCAPE;
+	vte->flags &= ~TSM_VTE_FLAG_PREPEND_ESCAPE;
 }
 
 #define vte_write(_vte, _u8, _len) \
@@ -672,8 +658,8 @@ static void save_state(struct tsm_vte *vte)
 	vte->saved_state.cattr = vte->cattr;
 	vte->saved_state.gl = vte->gl;
 	vte->saved_state.gr = vte->gr;
-	vte->saved_state.wrap_mode = vte->flags & FLAG_AUTO_WRAP_MODE;
-	vte->saved_state.origin_mode = vte->flags & FLAG_ORIGIN_MODE;
+	vte->saved_state.wrap_mode = vte->flags & TSM_VTE_FLAG_AUTO_WRAP_MODE;
+	vte->saved_state.origin_mode = vte->flags & TSM_VTE_FLAG_ORIGIN_MODE;
 }
 
 static void restore_state(struct tsm_vte *vte)
@@ -682,24 +668,24 @@ static void restore_state(struct tsm_vte *vte)
 			       vte->saved_state.cursor_y);
 	vte->cattr = vte->saved_state.cattr;
 	to_rgb(vte, &vte->cattr);
-	if (vte->flags & FLAG_BACKGROUND_COLOR_ERASE_MODE)
+	if (vte->flags & TSM_VTE_FLAG_BACKGROUND_COLOR_ERASE_MODE)
 		tsm_screen_set_def_attr(vte->con, &vte->cattr);
 	vte->gl = vte->saved_state.gl;
 	vte->gr = vte->saved_state.gr;
 
 	if (vte->saved_state.wrap_mode) {
-		vte->flags |= FLAG_AUTO_WRAP_MODE;
+		vte->flags |= TSM_VTE_FLAG_AUTO_WRAP_MODE;
 		tsm_screen_set_flags(vte->con, TSM_SCREEN_AUTO_WRAP);
 	} else {
-		vte->flags &= ~FLAG_AUTO_WRAP_MODE;
+		vte->flags &= ~TSM_VTE_FLAG_AUTO_WRAP_MODE;
 		tsm_screen_reset_flags(vte->con, TSM_SCREEN_AUTO_WRAP);
 	}
 
 	if (vte->saved_state.origin_mode) {
-		vte->flags |= FLAG_ORIGIN_MODE;
+		vte->flags |= TSM_VTE_FLAG_ORIGIN_MODE;
 		tsm_screen_set_flags(vte->con, TSM_SCREEN_REL_ORIGIN);
 	} else {
-		vte->flags &= ~FLAG_ORIGIN_MODE;
+		vte->flags &= ~TSM_VTE_FLAG_ORIGIN_MODE;
 		tsm_screen_reset_flags(vte->con, TSM_SCREEN_REL_ORIGIN);
 	}
 }
@@ -717,11 +703,11 @@ void tsm_vte_reset(struct tsm_vte *vte)
 		return;
 
 	vte->flags = 0;
-	vte->flags |= FLAG_TEXT_CURSOR_MODE;
-	vte->flags |= FLAG_AUTO_REPEAT_MODE;
-	vte->flags |= FLAG_SEND_RECEIVE_MODE;
-	vte->flags |= FLAG_AUTO_WRAP_MODE;
-	vte->flags |= FLAG_BACKGROUND_COLOR_ERASE_MODE;
+	vte->flags |= TSM_VTE_FLAG_TEXT_CURSOR_MODE;
+	vte->flags |= TSM_VTE_FLAG_AUTO_REPEAT_MODE;
+	vte->flags |= TSM_VTE_FLAG_SEND_RECEIVE_MODE;
+	vte->flags |= TSM_VTE_FLAG_AUTO_WRAP_MODE;
+	vte->flags |= TSM_VTE_FLAG_BACKGROUND_COLOR_ERASE_MODE;
 	tsm_screen_reset(vte->con);
 	tsm_screen_set_flags(vte->con, TSM_SCREEN_AUTO_WRAP);
 
@@ -792,7 +778,7 @@ static void do_execute(struct tsm_vte *vte, uint32_t ctrl)
 	case 0x0b: /* VT */
 	case 0x0c: /* FF */
 		/* Line feed or newline (CR/NL mode) */
-		if (vte->flags & FLAG_LINE_FEED_NEW_LINE_MODE)
+		if (vte->flags & TSM_VTE_FLAG_LINE_FEED_NEW_LINE_MODE)
 			tsm_screen_newline(vte->con);
 		else
 			tsm_screen_move_down(vte->con, 1, true);
@@ -1041,7 +1027,7 @@ static void do_esc(struct tsm_vte *vte, uint32_t data)
 		if (vte->csi_flags & CSI_SPACE) {
 			/* S7C1T */
 			/* Disable 8bit C1 mode */
-			vte->flags &= ~FLAG_USE_C1;
+			vte->flags &= ~TSM_VTE_FLAG_USE_C1;
 			return;
 		}
 		break;
@@ -1049,7 +1035,7 @@ static void do_esc(struct tsm_vte *vte, uint32_t data)
 		if (vte->csi_flags & CSI_SPACE) {
 			/* S8C1T */
 			/* Enable 8bit C1 mode */
-			vte->flags |= FLAG_USE_C1;
+			vte->flags |= TSM_VTE_FLAG_USE_C1;
 			return;
 		}
 		break;
@@ -1116,11 +1102,11 @@ static void do_esc(struct tsm_vte *vte, uint32_t data)
 		break;
 	case '=': /* DECKPAM */
 		/* Set application keypad mode */
-		vte->flags |= FLAG_KEYPAD_APPLICATION_MODE;
+		vte->flags |= TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE;
 		break;
 	case '>': /* DECKPNM */
 		/* Set numeric keypad mode */
-		vte->flags &= ~FLAG_KEYPAD_APPLICATION_MODE;
+		vte->flags &= ~TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE;
 		break;
 	case 'c': /* RIS */
 		/* hard reset */
@@ -1362,7 +1348,7 @@ static void csi_attribute(struct tsm_vte *vte)
 	}
 
 	to_rgb(vte, &vte->cattr);
-	if (vte->flags & FLAG_BACKGROUND_COLOR_ERASE_MODE)
+	if (vte->flags & TSM_VTE_FLAG_BACKGROUND_COLOR_ERASE_MODE)
 		tsm_screen_set_def_attr(vte->con, &vte->cattr);
 }
 
@@ -1383,7 +1369,7 @@ static void csi_compat_mode(struct tsm_vte *vte)
 		 * there is no need to explicitly select it.
 		 * However, we enable 7bit mode to avoid
 		 * character-table problems */
-		vte->flags |= FLAG_7BIT_MODE;
+		vte->flags |= TSM_VTE_FLAG_7BIT_MODE;
 		vte->g0 = &tsm_vte_unicode_lower;
 		vte->g1 = &tsm_vte_dec_supplemental_graphics;
 	} else if (vte->csi_argv[0] == 62 ||
@@ -1401,9 +1387,9 @@ static void csi_compat_mode(struct tsm_vte *vte)
 		 * compatibility is requested explicitly. */
 		if (vte->csi_argv[1] == 1 ||
 		    vte->csi_argv[1] == 2)
-			vte->flags |= FLAG_USE_C1;
+			vte->flags |= TSM_VTE_FLAG_USE_C1;
 
-		vte->flags |= FLAG_8BIT_MODE;
+		vte->flags |= TSM_VTE_FLAG_8BIT_MODE;
 		vte->g0 = &tsm_vte_unicode_lower;
 		vte->g1 = &tsm_vte_dec_supplemental_graphics;
 	} else {
@@ -1432,11 +1418,11 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 				continue;
 			case 2: /* KAM */
 				set_reset_flag(vte, set,
-					       FLAG_KEYBOARD_ACTION_MODE);
+					       TSM_VTE_FLAG_KEYBOARD_ACTION_MODE);
 				continue;
 			case 4: /* IRM */
 				set_reset_flag(vte, set,
-					       FLAG_INSERT_REPLACE_MODE);
+					       TSM_VTE_FLAG_INSERT_REPLACE_MODE);
 				if (set)
 					tsm_screen_set_flags(vte->con,
 						TSM_SCREEN_INSERT_MODE);
@@ -1446,11 +1432,11 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 				continue;
 			case 12: /* SRM */
 				set_reset_flag(vte, set,
-					       FLAG_SEND_RECEIVE_MODE);
+					       TSM_VTE_FLAG_SEND_RECEIVE_MODE);
 				continue;
 			case 20: /* LNM */
 				set_reset_flag(vte, set,
-					       FLAG_LINE_FEED_NEW_LINE_MODE);
+					       TSM_VTE_FLAG_LINE_FEED_NEW_LINE_MODE);
 				continue;
 			default:
 				llog_debug(vte, "unknown non-DEC (Re)Set-Mode %d",
@@ -1463,7 +1449,7 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 		case -1:
 			continue;
 		case 1: /* DECCKM */
-			set_reset_flag(vte, set, FLAG_CURSOR_KEY_MODE);
+			set_reset_flag(vte, set, TSM_VTE_FLAG_CURSOR_KEY_MODE);
 			continue;
 		case 2: /* DECANM */
 			/* Select VT52 mode */
@@ -1494,7 +1480,7 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 			 * scrolling so ignore this here. */
 			continue;
 		case 5: /* DECSCNM */
-			set_reset_flag(vte, set, FLAG_INVERSE_SCREEN_MODE);
+			set_reset_flag(vte, set, TSM_VTE_FLAG_INVERSE_SCREEN_MODE);
 			if (set)
 				tsm_screen_set_flags(vte->con,
 						TSM_SCREEN_INVERSE);
@@ -1503,7 +1489,7 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 						TSM_SCREEN_INVERSE);
 			continue;
 		case 6: /* DECOM */
-			set_reset_flag(vte, set, FLAG_ORIGIN_MODE);
+			set_reset_flag(vte, set, TSM_VTE_FLAG_ORIGIN_MODE);
 			if (set)
 				tsm_screen_set_flags(vte->con,
 						TSM_SCREEN_REL_ORIGIN);
@@ -1512,7 +1498,7 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 						TSM_SCREEN_REL_ORIGIN);
 			continue;
 		case 7: /* DECAWN */
-			set_reset_flag(vte, set, FLAG_AUTO_WRAP_MODE);
+			set_reset_flag(vte, set, TSM_VTE_FLAG_AUTO_WRAP_MODE);
 			if (set)
 				tsm_screen_set_flags(vte->con,
 						TSM_SCREEN_AUTO_WRAP);
@@ -1521,7 +1507,7 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 						TSM_SCREEN_AUTO_WRAP);
 			continue;
 		case 8: /* DECARM */
-			set_reset_flag(vte, set, FLAG_AUTO_REPEAT_MODE);
+			set_reset_flag(vte, set, TSM_VTE_FLAG_AUTO_REPEAT_MODE);
 			continue;
 		case 12: /* blinking cursor */
 			/* TODO: implement */
@@ -1538,7 +1524,7 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 			 * this mode. */
 			continue;
 		case 25: /* DECTCEM */
-			set_reset_flag(vte, set, FLAG_TEXT_CURSOR_MODE);
+			set_reset_flag(vte, set, TSM_VTE_FLAG_TEXT_CURSOR_MODE);
 			if (set)
 				tsm_screen_reset_flags(vte->con,
 						TSM_SCREEN_HIDE_CURSOR);
@@ -1547,10 +1533,10 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 						TSM_SCREEN_HIDE_CURSOR);
 			continue;
 		case 42: /* DECNRCM */
-			set_reset_flag(vte, set, FLAG_NATIONAL_CHARSET_MODE);
+			set_reset_flag(vte, set, TSM_VTE_FLAG_NATIONAL_CHARSET_MODE);
 			continue;
 		case 47: /* Alternate screen buffer */
-			if (vte->flags & FLAG_TITE_INHIBIT_MODE)
+			if (vte->flags & TSM_VTE_FLAG_TITE_INHIBIT_MODE)
 				continue;
 
 			if (set)
@@ -1561,7 +1547,7 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 						       TSM_SCREEN_ALTERNATE);
 			continue;
 		case 1047: /* Alternate screen buffer with post-erase */
-			if (vte->flags & FLAG_TITE_INHIBIT_MODE)
+			if (vte->flags & TSM_VTE_FLAG_TITE_INHIBIT_MODE)
 				continue;
 
 			if (set) {
@@ -1574,7 +1560,7 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 			}
 			continue;
 		case 1048: /* Set/Reset alternate-screen buffer cursor */
-			if (vte->flags & FLAG_TITE_INHIBIT_MODE)
+			if (vte->flags & TSM_VTE_FLAG_TITE_INHIBIT_MODE)
 				continue;
 
 			if (set) {
@@ -1588,7 +1574,7 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 			}
 			continue;
 		case 1049: /* Alternate screen buffer with pre-erase+cursor */
-			if (vte->flags & FLAG_TITE_INHIBIT_MODE)
+			if (vte->flags & TSM_VTE_FLAG_TITE_INHIBIT_MODE)
 				continue;
 
 			if (set) {
@@ -2372,12 +2358,12 @@ void tsm_vte_input(struct tsm_vte *vte, const char *u8, size_t len)
 
 	++vte->parse_cnt;
 	for (i = 0; i < len; ++i) {
-		if (vte->flags & FLAG_7BIT_MODE) {
+		if (vte->flags & TSM_VTE_FLAG_7BIT_MODE) {
 			if (u8[i] & 0x80)
 				llog_debug(vte, "receiving 8bit character U+%d from pty while in 7bit mode",
 					   (int)u8[i]);
 			parse_data(vte, u8[i] & 0x7f);
-		} else if (vte->flags & FLAG_8BIT_MODE) {
+		} else if (vte->flags & TSM_VTE_FLAG_8BIT_MODE) {
 			parse_data(vte, u8[i]);
 		} else {
 			state = tsm_utf8_mach_feed(vte->mach, u8[i]);
@@ -2418,7 +2404,7 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 	 * disables this by default, why?) and whether we should implement the
 	 * fallback shifting that xterm does. */
 	if (mods & TSM_ALT_MASK)
-		vte->flags |= FLAG_PREPEND_ESCAPE;
+		vte->flags |= TSM_VTE_FLAG_PREPEND_ESCAPE;
 
 	/* A user might actually use multiple layouts for keyboard input. The
 	 * @keysym variable contains the actual keysym that the user used. But
@@ -2620,13 +2606,13 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 			vte_write(vte, "\x1b", 1);
 			return true;
 		case XKB_KEY_KP_Enter:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE) {
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE) {
 				vte_write(vte, "\eOM", 3);
 				return true;
 			}
 			/* fallthrough */
 		case XKB_KEY_Return:
-			if (vte->flags & FLAG_LINE_FEED_NEW_LINE_MODE)
+			if (vte->flags & TSM_VTE_FLAG_LINE_FEED_NEW_LINE_MODE)
 				vte_write(vte, "\x0d\x0a", 2);
 			else
 				vte_write(vte, "\x0d", 1);
@@ -2655,7 +2641,7 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 		case XKB_KEY_KP_Up:
 			if (mods & TSM_CONTROL_MASK) {
 				vte_write(vte, "\e[1;5A", 6);
-			} else if (vte->flags & FLAG_CURSOR_KEY_MODE) {
+			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOA", 3);
 			} else {
 				vte_write(vte, "\e[A", 3);
@@ -2665,7 +2651,7 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 		case XKB_KEY_KP_Down:
 			if (mods & TSM_CONTROL_MASK) {
 				vte_write(vte, "\e[1;5B", 6);
-			} else if (vte->flags & FLAG_CURSOR_KEY_MODE) {
+			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOB", 3);
 			} else {
 				vte_write(vte, "\e[B", 3);
@@ -2675,7 +2661,7 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 		case XKB_KEY_KP_Right:
 			if (mods & TSM_CONTROL_MASK) {
 				vte_write(vte, "\e[1;5C", 6);
-			} else if (vte->flags & FLAG_CURSOR_KEY_MODE) {
+			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOC", 3);
 			} else {
 				vte_write(vte, "\e[C", 3);
@@ -2685,7 +2671,7 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 		case XKB_KEY_KP_Left:
 			if (mods & TSM_CONTROL_MASK) {
 				vte_write(vte, "\e[1;5D", 6);
-			} else if (vte->flags & FLAG_CURSOR_KEY_MODE) {
+			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOD", 3);
 			} else {
 				vte_write(vte, "\e[D", 3);
@@ -2693,113 +2679,113 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 			return true;
 		case XKB_KEY_KP_Insert:
 		case XKB_KEY_KP_0:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOp", 3);
 			else
 				vte_write(vte, "0", 1);
 			return true;
 		case XKB_KEY_KP_1:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOq", 3);
 			else
 				vte_write(vte, "1", 1);
 			return true;
 		case XKB_KEY_KP_2:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOr", 3);
 			else
 				vte_write(vte, "2", 1);
 			return true;
 		case XKB_KEY_KP_3:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOs", 3);
 			else
 				vte_write(vte, "3", 1);
 			return true;
 		case XKB_KEY_KP_4:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOt", 3);
 			else
 				vte_write(vte, "4", 1);
 			return true;
 		case XKB_KEY_KP_5:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOu", 3);
 			else
 				vte_write(vte, "5", 1);
 			return true;
 		case XKB_KEY_KP_6:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOv", 3);
 			else
 				vte_write(vte, "6", 1);
 			return true;
 		case XKB_KEY_KP_7:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOw", 3);
 			else
 				vte_write(vte, "7", 1);
 			return true;
 		case XKB_KEY_KP_8:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOx", 3);
 			else
 				vte_write(vte, "8", 1);
 			return true;
 		case XKB_KEY_KP_9:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOy", 3);
 			else
 				vte_write(vte, "9", 1);
 			return true;
 		case XKB_KEY_KP_Subtract:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOm", 3);
 			else
 				vte_write(vte, "-", 1);
 			return true;
 		case XKB_KEY_KP_Separator:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOl", 3);
 			else
 				vte_write(vte, ",", 1);
 			return true;
 		case XKB_KEY_KP_Delete:
 		case XKB_KEY_KP_Decimal:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOn", 3);
 			else
 				vte_write(vte, ".", 1);
 			return true;
 		case XKB_KEY_KP_Equal:
 		case XKB_KEY_KP_Divide:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOj", 3);
 			else
 				vte_write(vte, "/", 1);
 			return true;
 		case XKB_KEY_KP_Multiply:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOo", 3);
 			else
 				vte_write(vte, "*", 1);
 			return true;
 		case XKB_KEY_KP_Add:
-			if (vte->flags & FLAG_KEYPAD_APPLICATION_MODE)
+			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
 				vte_write(vte, "\eOk", 3);
 			else
 				vte_write(vte, "+", 1);
 			return true;
 		case XKB_KEY_Home:
 		case XKB_KEY_KP_Home:
-			if (vte->flags & FLAG_CURSOR_KEY_MODE)
+			if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE)
 				vte_write(vte, "\eOH", 3);
 			else
 				vte_write(vte, "\e[H", 3);
 			return true;
 		case XKB_KEY_End:
 		case XKB_KEY_KP_End:
-			if (vte->flags & FLAG_CURSOR_KEY_MODE)
+			if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE)
 				vte_write(vte, "\eOF", 3);
 			else
 				vte_write(vte, "\e[F", 3);
@@ -2948,7 +2934,7 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 	}
 
 	if (unicode != TSM_VTE_INVALID) {
-		if (vte->flags & FLAG_7BIT_MODE) {
+		if (vte->flags & TSM_VTE_FLAG_7BIT_MODE) {
 			val = unicode;
 			if (unicode & 0x80) {
 				llog_debug(vte, "invalid keyboard input in 7bit mode U+%x; mapping to '?'",
@@ -2956,7 +2942,7 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 				val = '?';
 			}
 			vte_write(vte, &val, 1);
-		} else if (vte->flags & FLAG_8BIT_MODE) {
+		} else if (vte->flags & TSM_VTE_FLAG_8BIT_MODE) {
 			val = unicode;
 			if (unicode > 0xff) {
 				llog_debug(vte, "invalid keyboard input in 8bit mode U+%x; mapping to '?'",
@@ -2971,6 +2957,6 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 		return true;
 	}
 
-	vte->flags &= ~FLAG_PREPEND_ESCAPE;
+	vte->flags &= ~TSM_VTE_FLAG_PREPEND_ESCAPE;
 	return false;
 }

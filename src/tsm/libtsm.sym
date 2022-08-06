@@ -124,4 +124,5 @@ global:
 LIBTSM_4_1 {
 global:
 	tsm_vte_set_backspace_sends_delete;
+	tsm_vte_get_flags;
 } LIBTSM_4;
