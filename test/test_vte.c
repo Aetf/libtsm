@@ -92,6 +92,9 @@ START_TEST(test_vte_null)
 
 	tsm_vte_get_def_attr(NULL, NULL);
 
+    tsm_vte_get_mouse_mode(NULL);
+    tsm_vte_get_mouse_event(NULL);
+
 	tsm_vte_reset(NULL);
 	tsm_vte_hard_reset(NULL);
 	tsm_vte_input(NULL, "", 0);

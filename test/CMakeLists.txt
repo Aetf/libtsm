@@ -47,6 +47,12 @@ libtsm_add_test(test_vte
         check::check
 )
 
+libtsm_add_test(test_vte_mouse
+    LINK_LIBRARIES
+        tsm_test
+        check::check
+)
+
 # This is only a quick sanity check that verifies the
 # valgrind tests work properly.
 libtsm_add_test(test_valgrind
