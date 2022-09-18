@@ -10,6 +10,12 @@ if(NOT WIN32)
     add_definitions(-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE)
 endif(NOT WIN32)
 
+if(APPLE)
+    add_compile_definitions(_DARWIN_C_SOURCE)
+    link_directories("/usr/local/lib")
+    include_directories("external")
+endif()
+
 # Set compiler flags for warnings
 if ("${CMAKE_CXX_COMPILER_ID}" MATCHES "Clang")
     # using Clang or AppleClang

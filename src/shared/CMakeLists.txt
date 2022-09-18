@@ -5,9 +5,11 @@
 #
 add_library(shl OBJECT
     shl-htable.c
-    shl-pty.c
-    shl-ring.c
 )
+
+if (BUILD_GTKTSM)
+    target_sources(shl PRIVATE shl-pty.c shl-ring.c)
+endif()
 
 target_include_directories(shl
     PUBLIC
