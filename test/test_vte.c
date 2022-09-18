@@ -205,11 +205,47 @@ START_TEST(test_vte_backspace_key)
 }
 END_TEST
 
+/* Regression test for https://github.com/Aetf/libtsm/issues/26 */
+START_TEST(test_vte_decrqm_no_reset)
+{
+	struct tsm_screen *screen;
+	struct tsm_vte *vte;
+	int r;
+	unsigned int flags;
+
+	r = tsm_screen_new(&screen, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_new(&vte, screen, write_cb, NULL, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	/* switch terminal to alternate screen mode */
+	tsm_vte_input(vte, "\033[?1049h", 8);
+
+	flags = tsm_screen_get_flags(screen);
+	ck_assert(flags & TSM_SCREEN_ALTERNATE);
+
+	/* send DECRQM SRM (12) request */
+	tsm_vte_input(vte, "\033[?12$p", 7);
+
+	/* terminal should still be in alternate screen mode */
+	flags = tsm_screen_get_flags(screen);
+	ck_assert(flags & TSM_SCREEN_ALTERNATE);
+
+	tsm_vte_unref(vte);
+	vte = NULL;
+
+	tsm_screen_unref(screen);
+	screen = NULL;
+}
+END_TEST
+
 TEST_DEFINE_CASE(misc)
 	TEST(test_vte_init)
 	TEST(test_vte_null)
 	TEST(test_vte_custom_palette)
 	TEST(test_vte_backspace_key)
+	TEST(test_vte_decrqm_no_reset)
 TEST_END_CASE
 
 // clang-format off
