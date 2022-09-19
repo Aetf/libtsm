@@ -1762,7 +1762,10 @@ static void do_csi(struct tsm_vte *vte, uint32_t data)
 			/* DECRQM: Request DEC Private Mode */
 			/* If CSI_WHAT is set, then enable,
 			 * otherwise disable */
-			csi_soft_reset(vte);
+
+			/* Ignore */
+
+			/* FIXME: Implement DECRQM */
 		} else {
 			/* DECSCL: Compatibility Level */
 			/* Sometimes CSI_DQUOTE is set here, too */
