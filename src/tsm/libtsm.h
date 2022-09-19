@@ -340,12 +340,38 @@ enum tsm_vte_color {
 	TSM_COLOR_NUM
 };
 
-/* mouse tracking */
-#define TSM_VTE_MOUSE_MODE_X10      9
-#define TSM_VTE_MOUSE_EVENT_BTN  1002
-#define TSM_VTE_MOUSE_EVENT_ANY  1003
-#define TSM_VTE_MOUSE_MODE_SGR   1006
-#define TSM_VTE_MOUSE_MODE_PIXEL 1016
+/**
+ * Mouse Tracking
+ *
+ * Reference:
+ *
+ * https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
+ *
+ * The application running in the terminal can request a mouse tracking mode
+ * and it can configure the event type (send position on click only or on click
+ * and on mouse movement). The terminal will then send the position
+ * of the mouse cursor as requested by the application.
+ *
+ * Since libtsm doesn't know anything about the UI or the mouse this can only
+ * work if the terminal emulator built on top of libtsm cooperates.
+ *
+ * To implement mouse tracking a terminal emulator must first set a mouse
+ * callback with tsm_vte_set_mouse_cb. This callback will be called whenever the
+ * mouse mode changes in a way that is relevant to the terminal. It tells the
+ * terminal if it needs to pass mouse events on click, on move, or not at all.
+ *
+ * To pass the mouse events the terminal needs to call tsm_vte_handle_mouse with
+ * all parameters filled appropriately. The function will then take care of
+ * sending the mouse events to the application in the correct encoding and
+ * it will also discard events that are duplicate or unnecessary.
+ */
+
+/* control sequence codes sent be the application */
+#define TSM_VTE_MOUSE_MODE_X10      9 /* legacy mode (only cell mode, only on mouse click and x and y can be 223 max) */
+#define TSM_VTE_MOUSE_EVENT_BTN  1002 /* sends position on mouse click only */
+#define TSM_VTE_MOUSE_EVENT_ANY  1003 /* sends position on mouse click and mouse move */
+#define TSM_VTE_MOUSE_MODE_SGR   1006 /* modern mode that allows unlimited x and y coordinates */
+#define TSM_VTE_MOUSE_MODE_PIXEL 1016 /* sends pixel coordinates instead of cell coordinates */
 
 enum tsm_mouse_track_mode {
 	TSM_MOUSE_TRACK_DISABLE = 0, /* don't track mouse events */
@@ -353,6 +379,19 @@ enum tsm_mouse_track_mode {
 	TSM_MOUSE_TRACK_ANY = TSM_VTE_MOUSE_EVENT_ANY  /* call tsm_vte_handle_mouse for mouse clicks and mouse movement */
 };
 
+/* mouse buttons to be passed to tsm_vte_handle_mouse */
+#define TSM_MOUSE_BUTTON_LEFT       0
+#define TSM_MOUSE_BUTTON_MIDDLE     1
+#define TSM_MOUSE_BUTTON_RIGHT      2
+#define TSM_MOUSE_BUTTON_WHEEL_UP   4
+#define TSM_MOUSE_BUTTON_WHEEL_DOWN 5
+
+/* modifier keys to be passed to tsm_vte_handle_mouse (can be combined with OR) */
+#define TSM_MOUSE_MODIFIER_SHIFT  4
+#define TSM_MOUSE_MODIFIER_META   8
+#define TSM_MOUSE_MODIFIER_CTRL  16
+
+/* events to be passed to tsm_vte_handle_mouse */
 #define TSM_MOUSE_EVENT_PRESSED  1
 #define TSM_MOUSE_EVENT_RELEASED 2
 #define TSM_MOUSE_EVENT_MOVED    4

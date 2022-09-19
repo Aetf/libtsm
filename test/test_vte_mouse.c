@@ -23,10 +23,9 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <stdio.h>
-#include "libtsm-int.h"
-#include "libtsm.h"
 #include "test_common.h"
+#include "libtsm.h"
+#include "libtsm-int.h"
 
 char write_buffer[512];
 
@@ -259,6 +258,7 @@ START_TEST(test_mouse_sgr_cell_change)
 END_TEST
 
 START_TEST(test_mouse_cb_pixels)
+{
 	char *msg;
 
 	/* Set Pixel Mode */
@@ -281,6 +281,7 @@ START_TEST(test_mouse_cb_pixels)
 	ck_assert(mouse_cb_called);
 	ck_assert_int_eq(mouse_track_mode, TSM_MOUSE_TRACK_ANY);
 	ck_assert(mouse_track_pixels);
+}
 END_TEST
 
 START_TEST(test_mouse_pixels)

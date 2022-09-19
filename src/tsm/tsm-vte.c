@@ -616,8 +616,6 @@ unsigned int tsm_vte_get_mouse_event(struct tsm_vte *vte)
 	return vte->mouse_event;
 }
 
-unsigned int tsm_vte_get_mouse_event(struct tsm_vte *vte);
-
 /*
  * Write raw byte-stream to pty.
  * When writing data to the client we must make sure that we send the correct
@@ -3093,9 +3091,9 @@ bool tsm_vte_handle_mouse(struct tsm_vte *vte, unsigned int cell_x,
 		cell_x++;
 		cell_y++;
 
-		if (button == 4) {
+		if (button == TSM_MOUSE_BUTTON_WHEEL_UP) {
 			button = 64;
-		} else if (button == 5) {
+		} else if (button == TSM_MOUSE_BUTTON_WHEEL_DOWN) {
 			button = 65;
 		}
 
