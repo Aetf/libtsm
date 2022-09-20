@@ -593,6 +593,10 @@ void tsm_vte_get_def_attr(struct tsm_vte *vte, struct tsm_screen_attr *out)
 SHL_EXPORT
 unsigned int tsm_vte_get_flags(struct tsm_vte *vte)
 {
+	if (!vte) {
+		return 0;
+	}
+
 	return vte->flags;
 }
 
