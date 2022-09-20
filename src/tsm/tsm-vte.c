@@ -117,6 +117,26 @@ enum parser_action {
 /* max length of an OSC code */
 #define OSC_MAX_LEN 128
 
+/* terminal flags */
+#define FLAG_CURSOR_KEY_MODE			0x00000001 /* DEC cursor key mode */
+#define FLAG_KEYPAD_APPLICATION_MODE		0x00000002 /* DEC keypad application mode; TODO: toggle on numlock? */
+#define FLAG_LINE_FEED_NEW_LINE_MODE		0x00000004 /* DEC line-feed/new-line mode */
+#define FLAG_8BIT_MODE				0x00000008 /* Disable UTF-8 mode and enable 8bit compatible mode */
+#define FLAG_7BIT_MODE				0x00000010 /* Disable 8bit mode and use 7bit compatible mode */
+#define FLAG_USE_C1				0x00000020 /* Explicitly use 8bit C1 codes; TODO: implement */
+#define FLAG_KEYBOARD_ACTION_MODE		0x00000040 /* Disable keyboard; TODO: implement? */
+#define FLAG_INSERT_REPLACE_MODE		0x00000080 /* Enable insert mode */
+#define FLAG_SEND_RECEIVE_MODE			0x00000100 /* Disable local echo */
+#define FLAG_TEXT_CURSOR_MODE			0x00000200 /* Show cursor */
+#define FLAG_INVERSE_SCREEN_MODE		0x00000400 /* Inverse colors */
+#define FLAG_ORIGIN_MODE			0x00000800 /* Relative origin for cursor */
+#define FLAG_AUTO_WRAP_MODE			0x00001000 /* Auto line wrap mode */
+#define FLAG_AUTO_REPEAT_MODE			0x00002000 /* Auto repeat key press; TODO: implement */
+#define FLAG_NATIONAL_CHARSET_MODE		0x00004000 /* Send keys from nation charsets; TODO: implement */
+#define FLAG_BACKGROUND_COLOR_ERASE_MODE	0x00008000 /* Set background color on erase (bce) */
+#define FLAG_PREPEND_ESCAPE			0x00010000 /* Prepend escape character to next output */
+#define FLAG_TITE_INHIBIT_MODE			0x00020000 /* Prevent switching to alternate screen buffer */
+
 struct vte_saved_state {
 	unsigned int cursor_x;
 	unsigned int cursor_y;
@@ -149,6 +169,13 @@ struct tsm_vte {
 	void *osc_data;
 	unsigned int osc_len;
 	char osc_arg[OSC_MAX_LEN];
+
+	tsm_vte_mouse_cb mouse_cb;
+	void *mouse_data;
+	unsigned int mouse_mode;
+	unsigned int mouse_event;
+	unsigned int mouse_last_col;
+	unsigned int mouse_last_row;
 
 	uint8_t (*custom_palette_storage)[3];
 	uint8_t (*palette)[3];
@@ -426,6 +453,8 @@ int tsm_vte_new(struct tsm_vte **out, struct tsm_screen *con,
 	vte->backspace_sends_delete = false;
 	vte->osc_cb = NULL;
 	vte->osc_data = NULL;
+	vte->mouse_cb = NULL;
+	vte->mouse_data = NULL;
 	vte->custom_palette_storage = NULL;
 	vte->palette = get_palette(vte);
 	vte->def_attr.fccode = TSM_COLOR_FOREGROUND;
@@ -483,6 +512,16 @@ void tsm_vte_set_osc_cb(struct tsm_vte *vte, tsm_vte_osc_cb osc_cb, void *osc_da
 
 	vte->osc_cb = osc_cb;
 	vte->osc_data = osc_data;
+}
+
+SHL_EXPORT
+void tsm_vte_set_mouse_cb(struct tsm_vte *vte, tsm_vte_mouse_cb mouse_cb, void *mouse_data)
+{
+	if (!vte)
+		return;
+
+	vte->mouse_cb = mouse_cb;
+	vte->mouse_data = mouse_data;
 }
 
 static int vte_update_palette(struct tsm_vte *vte)
@@ -555,6 +594,26 @@ SHL_EXPORT
 unsigned int tsm_vte_get_flags(struct tsm_vte *vte)
 {
 	return vte->flags;
+}
+
+SHL_EXPORT
+unsigned int tsm_vte_get_mouse_mode(struct tsm_vte *vte)
+{
+	if (!vte) {
+		return 0;
+	}
+
+	return vte->mouse_mode;
+}
+
+SHL_EXPORT
+unsigned int tsm_vte_get_mouse_event(struct tsm_vte *vte)
+{
+	if (!vte) {
+		return 0;
+	}
+
+	return vte->mouse_event;
 }
 
 /*
@@ -721,6 +780,11 @@ void tsm_vte_reset(struct tsm_vte *vte)
 	vte->g1 = &tsm_vte_unicode_upper;
 	vte->g2 = &tsm_vte_unicode_lower;
 	vte->g3 = &tsm_vte_unicode_upper;
+
+	vte->mouse_mode = 0;
+	vte->mouse_event = 0;
+	vte->mouse_last_col = 0;
+	vte->mouse_last_row = 0;
 
 	memcpy(&vte->cattr, &vte->def_attr, sizeof(vte->cattr));
 	to_rgb(vte, &vte->cattr);
@@ -1509,6 +1573,14 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 		case 8: /* DECARM */
 			set_reset_flag(vte, set, TSM_VTE_FLAG_AUTO_REPEAT_MODE);
 			continue;
+		case TSM_VTE_MOUSE_MODE_X10:
+			vte->mouse_mode = set ? vte->csi_argv[i] : 0;
+			vte->mouse_event = TSM_VTE_MOUSE_EVENT_BTN;
+
+			if (vte->mouse_cb) {
+			    vte->mouse_cb(vte, vte->mouse_event, false, vte->mouse_data);
+			}
+			continue;
 		case 12: /* blinking cursor */
 			/* TODO: implement */
 			continue;
@@ -1590,6 +1662,42 @@ static void csi_mode(struct tsm_vte *vte, bool set)
 						       TSM_SCREEN_ALTERNATE);
 				tsm_screen_move_to(vte->con, vte->alt_cursor_x,
 						   vte->alt_cursor_y);
+			}
+			continue;
+		case TSM_VTE_MOUSE_EVENT_BTN:
+		case TSM_VTE_MOUSE_EVENT_ANY:
+			if (vte->mouse_mode == TSM_VTE_MOUSE_MODE_X10) {
+			    vte->mouse_event = TSM_VTE_MOUSE_EVENT_BTN;
+			} else {
+			    vte->mouse_event = set ? vte->csi_argv[i] : 0;
+			}
+
+			if (vte->mouse_cb && vte->mouse_mode) {
+			    vte->mouse_cb(vte, vte->mouse_event, vte->mouse_mode == TSM_VTE_MOUSE_MODE_PIXEL, vte->mouse_data);
+			}
+			continue;
+		case TSM_VTE_MOUSE_MODE_SGR:
+			vte->mouse_mode = set ? vte->csi_argv[i] : 0;
+
+			if (!vte->mouse_cb) {
+			    continue;
+			}
+
+			if (!set || vte->mouse_event) {
+			    vte->mouse_cb(vte, vte->mouse_event, false, vte->mouse_data);
+			    continue;
+			}
+			continue;
+		case TSM_VTE_MOUSE_MODE_PIXEL:
+			vte->mouse_mode = set ? vte->csi_argv[i] : 0;
+
+			if (!vte->mouse_cb) {
+			    continue;
+			}
+
+			if (!set || vte->mouse_event) {
+			    vte->mouse_cb(vte, vte->mouse_event, set, vte->mouse_data);
+			    continue;
 			}
 			continue;
 		default:
@@ -2961,5 +3069,90 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 	}
 
 	vte->flags &= ~TSM_VTE_FLAG_PREPEND_ESCAPE;
+	return false;
+}
+
+bool tsm_vte_handle_mouse(struct tsm_vte *vte, unsigned int cell_x,
+		unsigned int cell_y, unsigned int pixel_x, unsigned int pixel_y,
+		unsigned int button, unsigned int event, unsigned char modifiers)
+{
+	char buffer[24];
+	unsigned char reply_flags = 0;
+	bool pressed = event & TSM_MOUSE_EVENT_PRESSED;
+
+	/* drop move event if we don't wait for move events */
+	if ((vte->mouse_mode == TSM_VTE_MOUSE_MODE_X10 || vte->mouse_event != TSM_VTE_MOUSE_EVENT_ANY) && (event & TSM_MOUSE_EVENT_MOVED)) {
+		return false;
+	}
+
+	if (vte->mouse_mode == TSM_VTE_MOUSE_MODE_SGR || vte->mouse_mode == TSM_VTE_MOUSE_MODE_PIXEL) {
+		/* internally we use zero indexing but the xterm spec requires the
+		 * top left cell to have the coordinates 1,1 */
+		cell_x++;
+		cell_y++;
+
+		if (button == TSM_MOUSE_BUTTON_WHEEL_UP) {
+			button = 64;
+		} else if (button == TSM_MOUSE_BUTTON_WHEEL_DOWN) {
+			button = 65;
+		}
+
+		reply_flags = button | modifiers;
+	}
+
+	if (vte->mouse_mode == TSM_VTE_MOUSE_MODE_X10) {
+		/* + 0x20 to start in the range of visible characters
+		 * and + 1 to start at 1,1 */
+		cell_x += 0x21;
+		cell_y += 0x21;
+
+		if (cell_x > 0xff) {
+			cell_x = 0xff;
+		}
+
+		if (cell_y > 0xff) {
+			cell_y = 0xff;
+		}
+
+		if (event & TSM_MOUSE_EVENT_RELEASED) {
+			/* translates to released but the information which key is
+			 * released gets lost by design of this encoding scheme */
+			button = 3;
+		}
+
+		reply_flags = (button | modifiers) + 0x20;
+		snprintf((char*) &buffer, sizeof(buffer), "\e[M%c%c%c", reply_flags, cell_x, cell_y);
+
+		vte_write(vte, buffer, strlen(buffer));
+		return true;
+	} else if (vte->mouse_mode == TSM_VTE_MOUSE_MODE_SGR && vte->mouse_event) {
+		if (event & TSM_MOUSE_EVENT_MOVED) {
+			if (cell_x == vte->mouse_last_col && cell_y == vte->mouse_last_row) {
+				return false;
+			}
+
+			reply_flags = 35;
+			pressed = true;
+
+			vte->mouse_last_col = cell_x;
+			vte->mouse_last_row = cell_y;
+		}
+
+		snprintf((char*) &buffer, sizeof(buffer), "\e[<%d;%d;%d%c", reply_flags, cell_x, cell_y, pressed ? 'M' : 'm');
+
+		vte_write(vte, buffer, strlen(buffer));
+		return true;
+	} else if (vte->mouse_mode == TSM_VTE_MOUSE_MODE_PIXEL && vte->mouse_event) {
+		if (event == TSM_MOUSE_EVENT_MOVED) {
+			reply_flags = 35;
+			pressed = true;
+		}
+
+		snprintf((char*) &buffer, sizeof(buffer), "\e[<%d;%d;%d%c", reply_flags, pixel_x, pixel_y, pressed ? 'M' : 'm');
+
+		vte_write(vte, buffer, strlen(buffer));
+		return true;
+	}
+
 	return false;
 }

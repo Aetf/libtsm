@@ -56,6 +56,8 @@
 								\
 		tc = tcase_create(#_name);			\
 
+#define CHECKED_FIXTURE(_setup, _teardown) tcase_add_checked_fixture(tc, _setup, _teardown);
+#define FIXTURE(_setup, _teardown) tcase_add_fixture(tc, _setup, _teardown);
 #define TEST(_name) tcase_add_test(tc, _name);
 
 #define TEST_END_CASE						\

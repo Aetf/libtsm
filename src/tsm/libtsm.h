@@ -340,6 +340,62 @@ enum tsm_vte_color {
 	TSM_COLOR_NUM
 };
 
+/**
+ * Mouse Tracking
+ *
+ * Reference:
+ *
+ * https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Mouse-Tracking
+ *
+ * The application running in the terminal can request a mouse tracking mode
+ * and it can configure the event type (send position on click only or on click
+ * and on mouse movement). The terminal will then send the position
+ * of the mouse cursor as requested by the application.
+ *
+ * Since libtsm doesn't know anything about the UI or the mouse this can only
+ * work if the terminal emulator built on top of libtsm cooperates.
+ *
+ * To implement mouse tracking a terminal emulator must first set a mouse
+ * callback with tsm_vte_set_mouse_cb. This callback will be called whenever the
+ * mouse mode changes in a way that is relevant to the terminal. It tells the
+ * terminal if it needs to pass mouse events on click, on move, or not at all.
+ *
+ * To pass the mouse events the terminal needs to call tsm_vte_handle_mouse with
+ * all parameters filled appropriately. The function will then take care of
+ * sending the mouse events to the application in the correct encoding and
+ * it will also discard events that are duplicate or unnecessary.
+ */
+
+/* control sequence codes sent be the application */
+#define TSM_VTE_MOUSE_MODE_X10      9 /* legacy mode (only cell mode, only on mouse click and x and y can be 223 max) */
+#define TSM_VTE_MOUSE_EVENT_BTN  1002 /* sends position on mouse click only */
+#define TSM_VTE_MOUSE_EVENT_ANY  1003 /* sends position on mouse click and mouse move */
+#define TSM_VTE_MOUSE_MODE_SGR   1006 /* modern mode that allows unlimited x and y coordinates */
+#define TSM_VTE_MOUSE_MODE_PIXEL 1016 /* sends pixel coordinates instead of cell coordinates */
+
+enum tsm_mouse_track_mode {
+	TSM_MOUSE_TRACK_DISABLE = 0, /* don't track mouse events */
+	TSM_MOUSE_TRACK_BTN = TSM_VTE_MOUSE_EVENT_BTN, /* call tsm_vte_handle_mouse only for mouse clicks */
+	TSM_MOUSE_TRACK_ANY = TSM_VTE_MOUSE_EVENT_ANY  /* call tsm_vte_handle_mouse for mouse clicks and mouse movement */
+};
+
+/* mouse buttons to be passed to tsm_vte_handle_mouse */
+#define TSM_MOUSE_BUTTON_LEFT       0
+#define TSM_MOUSE_BUTTON_MIDDLE     1
+#define TSM_MOUSE_BUTTON_RIGHT      2
+#define TSM_MOUSE_BUTTON_WHEEL_UP   4
+#define TSM_MOUSE_BUTTON_WHEEL_DOWN 5
+
+/* modifier keys to be passed to tsm_vte_handle_mouse (can be combined with OR) */
+#define TSM_MOUSE_MODIFIER_SHIFT  4
+#define TSM_MOUSE_MODIFIER_META   8
+#define TSM_MOUSE_MODIFIER_CTRL  16
+
+/* events to be passed to tsm_vte_handle_mouse */
+#define TSM_MOUSE_EVENT_PRESSED  1
+#define TSM_MOUSE_EVENT_RELEASED 2
+#define TSM_MOUSE_EVENT_MOVED    4
+
 typedef void (*tsm_vte_write_cb) (struct tsm_vte *vte,
 				  const char *u8,
 				  size_t len,
@@ -350,6 +406,11 @@ typedef void (*tsm_vte_osc_cb) (struct tsm_vte *vte,
 				  size_t len,
 				  void *data);
 
+typedef void (*tsm_vte_mouse_cb) (struct tsm_vte *vte,
+				  enum tsm_mouse_track_mode track_mode,
+				  bool track_pixels,
+				  void *data);
+
 int tsm_vte_new(struct tsm_vte **out, struct tsm_screen *con,
 		tsm_vte_write_cb write_cb, void *data,
 		tsm_log_t log, void *log_data);
@@ -357,6 +418,7 @@ void tsm_vte_ref(struct tsm_vte *vte);
 void tsm_vte_unref(struct tsm_vte *vte);
 
 void tsm_vte_set_osc_cb(struct tsm_vte *vte, tsm_vte_osc_cb osc_cb, void *osc_data);
+void tsm_vte_set_mouse_cb(struct tsm_vte *vte, tsm_vte_mouse_cb mouse_cb, void *mouse_data);
 
 /**
  * @brief Set color palette to one of the predefined palette on the vte object.
@@ -427,6 +489,9 @@ int tsm_vte_set_custom_palette(struct tsm_vte *vte, uint8_t (*palette)[3]);
 void tsm_vte_get_def_attr(struct tsm_vte *vte, struct tsm_screen_attr *out);
 unsigned int tsm_vte_get_flags(struct tsm_vte *vte);
 
+unsigned int tsm_vte_get_mouse_mode(struct tsm_vte *vte);
+unsigned int tsm_vte_get_mouse_event(struct tsm_vte *vte);
+
 void tsm_vte_reset(struct tsm_vte *vte);
 void tsm_vte_hard_reset(struct tsm_vte *vte);
 void tsm_vte_input(struct tsm_vte *vte, const char *u8, size_t len);
@@ -446,6 +511,9 @@ void tsm_vte_set_backspace_sends_delete(struct tsm_vte *vte, bool enable);
 bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 			     uint32_t ascii, unsigned int mods,
 			     uint32_t unicode);
+bool tsm_vte_handle_mouse(struct tsm_vte *vte, unsigned int cell_x,
+        unsigned int cell_y, unsigned int pixel_x, unsigned int pixel_y,
+        unsigned int button, unsigned int event, unsigned char flags);
 
 /** @} */
 
