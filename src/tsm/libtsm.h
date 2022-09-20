@@ -284,6 +284,26 @@ tsm_age_t tsm_screen_draw(struct tsm_screen *con, tsm_screen_draw_cb draw_cb,
 
 struct tsm_vte;
 
+/* terminal flags */
+#define TSM_VTE_FLAG_CURSOR_KEY_MODE			0x00000001 /* DEC cursor key mode */
+#define TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE		0x00000002 /* DEC keypad application mode; TODO: toggle on numlock? */
+#define TSM_VTE_FLAG_LINE_FEED_NEW_LINE_MODE		0x00000004 /* DEC line-feed/new-line mode */
+#define TSM_VTE_FLAG_8BIT_MODE				0x00000008 /* Disable UTF-8 mode and enable 8bit compatible mode */
+#define TSM_VTE_FLAG_7BIT_MODE				0x00000010 /* Disable 8bit mode and use 7bit compatible mode */
+#define TSM_VTE_FLAG_USE_C1				0x00000020 /* Explicitly use 8bit C1 codes; TODO: implement */
+#define TSM_VTE_FLAG_KEYBOARD_ACTION_MODE		0x00000040 /* Disable keyboard; TODO: implement? */
+#define TSM_VTE_FLAG_INSERT_REPLACE_MODE		0x00000080 /* Enable insert mode */
+#define TSM_VTE_FLAG_SEND_RECEIVE_MODE			0x00000100 /* Disable local echo */
+#define TSM_VTE_FLAG_TEXT_CURSOR_MODE			0x00000200 /* Show cursor */
+#define TSM_VTE_FLAG_INVERSE_SCREEN_MODE		0x00000400 /* Inverse colors */
+#define TSM_VTE_FLAG_ORIGIN_MODE			0x00000800 /* Relative origin for cursor */
+#define TSM_VTE_FLAG_AUTO_WRAP_MODE			0x00001000 /* Auto line wrap mode */
+#define TSM_VTE_FLAG_AUTO_REPEAT_MODE			0x00002000 /* Auto repeat key press; TODO: implement */
+#define TSM_VTE_FLAG_NATIONAL_CHARSET_MODE		0x00004000 /* Send keys from nation charsets; TODO: implement */
+#define TSM_VTE_FLAG_BACKGROUND_COLOR_ERASE_MODE	0x00008000 /* Set background color on erase (bce) */
+#define TSM_VTE_FLAG_PREPEND_ESCAPE			0x00010000 /* Prepend escape character to next output */
+#define TSM_VTE_FLAG_TITE_INHIBIT_MODE			0x00020000 /* Prevent switching to alternate screen buffer */
+
 /* keep in sync with shl_xkb_mods */
 enum tsm_vte_modifier {
 	TSM_SHIFT_MASK		= (1 << 0),
@@ -405,6 +425,7 @@ int tsm_vte_set_palette(struct tsm_vte *vte, const char *palette_name);
 int tsm_vte_set_custom_palette(struct tsm_vte *vte, uint8_t (*palette)[3]);
 
 void tsm_vte_get_def_attr(struct tsm_vte *vte, struct tsm_screen_attr *out);
+unsigned int tsm_vte_get_flags(struct tsm_vte *vte);
 
 void tsm_vte_reset(struct tsm_vte *vte);
 void tsm_vte_hard_reset(struct tsm_vte *vte);

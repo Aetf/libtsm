@@ -205,6 +205,36 @@ START_TEST(test_vte_backspace_key)
 }
 END_TEST
 
+START_TEST(test_vte_get_flags)
+{
+	struct tsm_screen *screen;
+	struct tsm_vte *vte;
+	char expected_output;
+	int r, flags;
+
+	r = tsm_screen_new(&screen, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_new(&vte, screen, checking_write_cb, &expected_output, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	flags = tsm_vte_get_flags(vte);
+	ck_assert(!(flags & TSM_VTE_FLAG_CURSOR_KEY_MODE));
+
+	// enable cursor key mode
+	tsm_vte_input(vte, "\033[?1h", 5);
+
+	flags = tsm_vte_get_flags(vte);
+	ck_assert(flags & TSM_VTE_FLAG_CURSOR_KEY_MODE);
+
+	tsm_vte_unref(vte);
+	vte = NULL;
+
+	tsm_screen_unref(screen);
+	screen = NULL;
+}
+END_TEST
+
 /* Regression test for https://github.com/Aetf/libtsm/issues/26 */
 START_TEST(test_vte_decrqm_no_reset)
 {
@@ -245,6 +275,7 @@ TEST_DEFINE_CASE(misc)
 	TEST(test_vte_null)
 	TEST(test_vte_custom_palette)
 	TEST(test_vte_backspace_key)
+	TEST(test_vte_get_flags)
 	TEST(test_vte_decrqm_no_reset)
 TEST_END_CASE
 
