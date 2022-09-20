@@ -91,6 +91,7 @@ START_TEST(test_vte_null)
 	ck_assert_int_eq(r, -EINVAL);
 
 	tsm_vte_get_def_attr(NULL, NULL);
+	tsm_vte_get_flags(NULL);
 
 	tsm_vte_get_mouse_mode(NULL);
 	tsm_vte_get_mouse_event(NULL);
