@@ -129,4 +129,6 @@ global:
 	tsm_vte_get_mouse_mode;
 	tsm_vte_get_mouse_event;
 	tsm_vte_handle_mouse;
+	tsm_screen_sb_get_line_count;
+	tsm_screen_sb_get_line_pos;
 } LIBTSM_4;

@@ -194,11 +194,80 @@ START_TEST(test_screen_resize_alt_colors)
 }
 END_TEST
 
+START_TEST(test_screen_sb_get_line_pos)
+{
+	struct tsm_screen *screen;
+	int r;
+
+	r = tsm_screen_new(&screen, NULL, NULL);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_screen_resize(screen, 5, 5);
+	ck_assert_int_eq(r, 0);
+
+	tsm_screen_set_max_sb(screen, 5);
+
+	ck_assert_int_eq(tsm_screen_sb_get_line_count(screen), 0);
+	ck_assert_int_eq(tsm_screen_sb_get_line_pos(screen), 0);
+
+	/* fill up screen */
+	tsm_screen_newline(screen);
+	tsm_screen_newline(screen);
+	tsm_screen_newline(screen);
+	tsm_screen_newline(screen);
+
+	/* create first entry in scrollback buffer */
+	tsm_screen_newline(screen);
+
+	ck_assert_int_eq(tsm_screen_sb_get_line_count(screen), 1);
+	ck_assert_int_eq(tsm_screen_sb_get_line_pos(screen), 1);
+
+	tsm_screen_newline(screen);
+
+	ck_assert_int_eq(tsm_screen_sb_get_line_count(screen), 2);
+	ck_assert_int_eq(tsm_screen_sb_get_line_pos(screen), 2);
+
+	tsm_screen_newline(screen);
+
+	ck_assert_int_eq(tsm_screen_sb_get_line_count(screen), 3);
+	ck_assert_int_eq(tsm_screen_sb_get_line_pos(screen), 3);
+
+	/* scroll up by one (third line of sb) */
+	tsm_screen_sb_up(screen, 1);
+	ck_assert_int_eq(tsm_screen_sb_get_line_count(screen), 3);
+	ck_assert_int_eq(tsm_screen_sb_get_line_pos(screen), 2);
+
+	/* scroll up by one (second line of sb) */
+	tsm_screen_sb_up(screen, 1);
+	ck_assert_int_eq(tsm_screen_sb_get_line_count(screen), 3);
+	ck_assert_int_eq(tsm_screen_sb_get_line_pos(screen), 1);
+
+	/* scroll up by one (first line of sb) */
+	tsm_screen_sb_up(screen, 1);
+	ck_assert_int_eq(tsm_screen_sb_get_line_count(screen), 3);
+	ck_assert_int_eq(tsm_screen_sb_get_line_pos(screen), 0);
+
+	/* scroll up beyond top end of buffer */
+	tsm_screen_sb_up(screen, 1);
+	ck_assert_int_eq(tsm_screen_sb_get_line_count(screen), 3);
+	ck_assert_int_eq(tsm_screen_sb_get_line_pos(screen), 0);
+
+	/* scroll out of scrollback buffer */
+	tsm_screen_sb_down(screen, 3);
+	ck_assert_int_eq(tsm_screen_sb_get_line_count(screen), 3);
+	ck_assert_int_eq(tsm_screen_sb_get_line_pos(screen), 3);
+
+	tsm_screen_unref(screen);
+	screen = NULL;
+}
+END_TEST
+
 
 TEST_DEFINE_CASE(misc)
 	TEST(test_screen_init)
 	TEST(test_screen_null)
 	TEST(test_screen_resize_alt_colors)
+	TEST(test_screen_sb_get_line_pos)
 TEST_END_CASE
 
 TEST_DEFINE(

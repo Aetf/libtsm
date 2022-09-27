@@ -230,10 +230,13 @@ static void link_to_scrollback(struct tsm_screen *con, struct line *line)
 		if (con->sb_pos) {
 			if (con->sb_pos == tmp ||
 			    !(con->flags & TSM_SCREEN_FIXED_POS)) {
-				if (con->sb_pos->next)
+				if (con->sb_pos->next) {
 					con->sb_pos = con->sb_pos->next;
-				else
+					++con->sb_pos_num;
+				} else {
 					con->sb_pos = line;
+					con->sb_pos_num = 0;
+				}
 			}
 		}
 
@@ -253,12 +256,17 @@ static void link_to_scrollback(struct tsm_screen *con, struct line *line)
 	line->sb_id = ++con->sb_last_id;
 	line->next = NULL;
 	line->prev = con->sb_last;
-	if (con->sb_last)
+	if (con->sb_last) {
 		con->sb_last->next = line;
-	else
+	} else {
 		con->sb_first = line;
+	}
 	con->sb_last = line;
 	++con->sb_count;
+
+	if (con->sb_pos == NULL) {
+		con->sb_pos_num = con->sb_count;
+	}
 }
 
 static void screen_scroll_up(struct tsm_screen *con, unsigned int num)
@@ -830,6 +838,7 @@ void tsm_screen_clear_sb(struct tsm_screen *con)
 	con->sb_last = NULL;
 	con->sb_count = 0;
 	con->sb_pos = NULL;
+	con->sb_pos_num = 0;
 
 	if (con->sel_active) {
 		if (con->sel_start.line) {
@@ -859,10 +868,12 @@ void tsm_screen_sb_up(struct tsm_screen *con, unsigned int num)
 				return;
 
 			con->sb_pos = con->sb_pos->prev;
+			--con->sb_pos_num;
 		} else if (!con->sb_last) {
 			return;
 		} else {
 			con->sb_pos = con->sb_last;
+			con->sb_pos_num = con->sb_count - 1;
 		}
 	}
 }
@@ -878,8 +889,10 @@ void tsm_screen_sb_down(struct tsm_screen *con, unsigned int num)
 	con->age = con->age_cnt;
 
 	while (num--) {
-		if (con->sb_pos)
+		if (con->sb_pos) {
 			con->sb_pos = con->sb_pos->next;
+			++con->sb_pos_num;
+		}
 		else
 			return;
 	}
@@ -916,6 +929,25 @@ void tsm_screen_sb_reset(struct tsm_screen *con)
 	con->age = con->age_cnt;
 
 	con->sb_pos = NULL;
+	con->sb_pos_num = 0;
+}
+
+unsigned int tsm_screen_sb_get_line_count(struct tsm_screen *con)
+{
+	if (!con) {
+		return 0;
+	}
+
+	return con->sb_count;
+}
+
+unsigned int tsm_screen_sb_get_line_pos(struct tsm_screen *con)
+{
+	if (!con) {
+		return 0;
+	}
+
+	return con->sb_pos_num;
 }
 
 SHL_EXPORT
