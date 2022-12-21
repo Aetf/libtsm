@@ -219,6 +219,50 @@ static uint8_t color_palette[TSM_COLOR_NUM][3] = {
 	[TSM_COLOR_BACKGROUND]    = {   0,   0,   0 }, /* black */
 };
 
+static uint8_t color_palette_gruvbox[TSM_COLOR_NUM][3] = {
+	[TSM_COLOR_BLACK]         = {  40,  40,  40 }, /* black */
+     	[TSM_COLOR_RED]           = { 204,  36,  29 }, /* red */
+     	[TSM_COLOR_GREEN]         = { 152, 151,  26 }, /* green */
+     	[TSM_COLOR_YELLOW]        = { 215, 153,  33 }, /* yellow */
+     	[TSM_COLOR_BLUE]          = {  69, 133, 136 }, /* blue */
+     	[TSM_COLOR_MAGENTA]       = { 177,  98, 134 }, /* magenta */
+     	[TSM_COLOR_CYAN]          = { 104, 157, 106 }, /* cyan */
+     	[TSM_COLOR_LIGHT_GREY]    = { 168, 153, 132 }, /* light grey */
+     	[TSM_COLOR_DARK_GREY]     = { 146, 131, 116 }, /* dark grey */
+     	[TSM_COLOR_LIGHT_RED]     = { 251,  73,  52 }, /* light red */
+     	[TSM_COLOR_LIGHT_GREEN]   = { 184, 187,  38 }, /* light green */
+     	[TSM_COLOR_LIGHT_YELLOW]  = { 250, 189,  47 }, /* light yellow */
+     	[TSM_COLOR_LIGHT_BLUE]    = { 131, 165, 152 }, /* light blue */
+     	[TSM_COLOR_LIGHT_MAGENTA] = { 211, 134, 155 }, /* light magenta */
+     	[TSM_COLOR_LIGHT_CYAN]    = { 142, 192, 124 }, /* light cyan */
+     	[TSM_COLOR_WHITE]         = { 235, 219, 178 }, /* white */
+
+     	[TSM_COLOR_FOREGROUND]    = { 235, 219, 178 }, /* white */
+     	[TSM_COLOR_BACKGROUND]    = {  40,  40,  40 }, /* black */
+ };
+
+static uint8_t color_palette_gruvbox_black[TSM_COLOR_NUM][3] = {
+	[TSM_COLOR_BLACK]         = {  0,  0,  0 }, /* black */
+     	[TSM_COLOR_RED]           = { 204,  36,  29 }, /* red */
+     	[TSM_COLOR_GREEN]         = { 152, 151,  26 }, /* green */
+     	[TSM_COLOR_YELLOW]        = { 215, 153,  33 }, /* yellow */
+     	[TSM_COLOR_BLUE]          = {  69, 133, 136 }, /* blue */
+     	[TSM_COLOR_MAGENTA]       = { 177,  98, 134 }, /* magenta */
+     	[TSM_COLOR_CYAN]          = { 104, 157, 106 }, /* cyan */
+     	[TSM_COLOR_LIGHT_GREY]    = { 168, 153, 132 }, /* light grey */
+     	[TSM_COLOR_DARK_GREY]     = { 146, 131, 116 }, /* dark grey */
+     	[TSM_COLOR_LIGHT_RED]     = { 251,  73,  52 }, /* light red */
+     	[TSM_COLOR_LIGHT_GREEN]   = { 184, 187,  38 }, /* light green */
+     	[TSM_COLOR_LIGHT_YELLOW]  = { 250, 189,  47 }, /* light yellow */
+     	[TSM_COLOR_LIGHT_BLUE]    = { 131, 165, 152 }, /* light blue */
+     	[TSM_COLOR_LIGHT_MAGENTA] = { 211, 134, 155 }, /* light magenta */
+     	[TSM_COLOR_LIGHT_CYAN]    = { 142, 192, 124 }, /* light cyan */
+     	[TSM_COLOR_WHITE]         = { 235, 219, 178 }, /* white */
+
+     	[TSM_COLOR_FOREGROUND]    = { 235, 219, 178 }, /* white */
+     	[TSM_COLOR_BACKGROUND]    = {  0,  0,  0 }, /* black */
+ };
+
 static uint8_t color_palette_solarized[TSM_COLOR_NUM][3] = {
 	[TSM_COLOR_BLACK]         = {   7,  54,  66 }, /* black */
 	[TSM_COLOR_RED]           = { 220,  50,  47 }, /* red */
@@ -358,6 +402,10 @@ static uint8_t (*get_palette(struct tsm_vte *vte))[3]
 
 	if (!strcmp(vte->palette_name, "custom") && vte->custom_palette_storage)
 		return vte->custom_palette_storage;
+	if (!strcmp(vte->palette_name, "gruvbox"))
+		return color_palette_gruvbox;
+	if (!strcmp(vte->palette_name, "gruvbox-black"))
+		return color_palette_gruvbox_black;
 	if (!strcmp(vte->palette_name, "solarized"))
 		return color_palette_solarized;
 	if (!strcmp(vte->palette_name, "solarized-black"))
