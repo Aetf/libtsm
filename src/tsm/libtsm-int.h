@@ -34,7 +34,11 @@
 #include "libtsm.h"
 #include "shl-llog.h"
 
+#ifdef _MSC_VER
+#define SHL_EXPORT
+#else
 #define SHL_EXPORT __attribute__((visibility("default")))
+#endif
 
 /* max combined-symbol length */
 #define TSM_UCS4_MAXLEN 10

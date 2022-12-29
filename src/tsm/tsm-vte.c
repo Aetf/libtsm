@@ -58,6 +58,10 @@
 
 #define LLOG_SUBSYSTEM "tsm-vte"
 
+// \e is a gcc extension of the C standard and supported by clang but not by MSVC
+// so we use our own constant to represent escape to be standards compliant
+#define ESC "\x1b"
+
 /* Input parser states */
 enum parser_state {
 	STATE_NONE,		/* placeholder */
@@ -672,12 +676,12 @@ static void vte_write_debug(struct tsm_vte *vte, const char *u8, size_t len,
 	/* in local echo mode, directly parse the data again */
 	if (!vte->parse_cnt && !(vte->flags & TSM_VTE_FLAG_SEND_RECEIVE_MODE)) {
 		if (vte->flags & TSM_VTE_FLAG_PREPEND_ESCAPE)
-			tsm_vte_input(vte, "\e", 1);
+			tsm_vte_input(vte, ESC, 1);
 		tsm_vte_input(vte, u8, len);
 	}
 
 	if (vte->flags & TSM_VTE_FLAG_PREPEND_ESCAPE)
-		vte->write_cb(vte, "\e", 1, vte->data);
+		vte->write_cb(vte, ESC, 1, vte->data);
 	vte->write_cb(vte, u8, len, vte->data);
 
 	vte->flags &= ~TSM_VTE_FLAG_PREPEND_ESCAPE;
@@ -811,7 +815,7 @@ void tsm_vte_hard_reset(struct tsm_vte *vte)
 
 static void send_primary_da(struct tsm_vte *vte)
 {
-	const static char str[] = "\e[?60;1;6;9;15c";
+	const static char str[] = ESC"[?60;1;6;9;15c";
 	vte_write(vte, str, sizeof(str) - 1);
 }
 
@@ -1719,7 +1723,7 @@ static void csi_dev_attr(struct tsm_vte *vte)
 			send_primary_da(vte);
 			return;
 		} else if (vte->csi_flags & CSI_GT) {
-			vte_write(vte, "\e[>1;1;0c", 9);
+			vte_write(vte, ESC"[>1;1;0c", 9);
 			return;
 		}
 	}
@@ -1734,13 +1738,13 @@ static void csi_dsr(struct tsm_vte *vte)
 	unsigned int x, y, len;
 
 	if (vte->csi_argv[0] == 5) {
-		vte_write(vte, "\e[0n", 4);
+		vte_write(vte, ESC"[0n", 4);
 	} else if (vte->csi_argv[0] == 6) {
 		x = tsm_screen_get_cursor_x(vte->con);
 		y = tsm_screen_get_cursor_y(vte->con);
-		len = snprintf(buf, sizeof(buf), "\e[%u;%uR", y + 1, x + 1);
+		len = snprintf(buf, sizeof(buf), ESC"[%u;%uR", y + 1, x + 1);
 		if (len >= sizeof(buf))
-			vte_write(vte, "\e[0;0R", 6);
+			vte_write(vte, ESC"[0;0R", 6);
 		else
 			vte_write(vte, buf, len);
 	}
@@ -1983,23 +1987,20 @@ static void do_csi(struct tsm_vte *vte, uint32_t data)
 static uint32_t vte_map(struct tsm_vte *vte, uint32_t val)
 {
 	/* 32, 127, 160 and 255 map to identity like all values >255 */
-	switch (val) {
-	case 33 ... 126:
+	if (val >= 33 && val <= 126) {
 		if (vte->glt) {
 			val = (**vte->glt)[val - 32];
 			vte->glt = NULL;
 		} else {
 			val = (**vte->gl)[val - 32];
 		}
-		break;
-	case 161 ... 254:
+	} else if (val >= 161 && val <= 254) {
 		if (vte->grt) {
 			val = (**vte->grt)[val - 160];
 			vte->grt = NULL;
 		} else {
 			val = (**vte->gr)[val - 160];
 		}
-		break;
 	}
 
 	return val;
@@ -2125,8 +2126,10 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 	switch (raw) {
 		case 0x18:
 		case 0x1a:
-		case 0x80 ... 0x8f:
-		case 0x91 ... 0x97:
+		// case 0x80 ... 0x8f:
+		case 0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: case 0x86: case 0x87: case 0x88: case 0x89: case 0x8A: case 0x8B: case 0x8C: case 0x8D: case 0x8E: case 0x8F:
+		// case 0x91 ... 0x97:
+		case 0x91: case 0x92: case 0x93: case 0x94: case 0x95: case 0x96: case 0x97:
 		case 0x99:
 		case 0x9a:
 		case 0x9c:
@@ -2155,15 +2158,20 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 	switch (vte->state) {
 	case STATE_GROUND:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
-		case 0x80 ... 0x8f:
-		case 0x91 ... 0x9a:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
+		// case 0x80 ... 0x8f:
+		case 0x80: case 0x81: case 0x82: case 0x83: case 0x84: case 0x85: case 0x86: case 0x87: case 0x88: case 0x89: case 0x8A: case 0x8B: case 0x8C: case 0x8D: case 0x8E: case 0x8F:
+		// case 0x91 ... 0x9a:
+		case 0x91: case 0x92: case 0x93: case 0x94: case 0x95: case 0x96: case 0x97: case 0x98: case 0x99: case 0x9A:
 		case 0x9c:
 			do_trans(vte, raw, STATE_NONE, ACTION_EXECUTE);
 			return;
-		case 0x20 ... 0x7f:
+		// case 0x20 ... 0x7f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E: case 0x3F: case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
 			do_trans(vte, raw, STATE_NONE, ACTION_PRINT);
 			return;
 		}
@@ -2171,23 +2179,29 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_ESC:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
 			do_trans(vte, raw, STATE_NONE, ACTION_EXECUTE);
 			return;
 		case 0x7f:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
-		case 0x20 ... 0x2f:
+		// case 0x20 ... 0x2f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F:
 			do_trans(vte, raw, STATE_ESC_INT, ACTION_COLLECT);
 			return;
-		case 0x30 ... 0x4f:
-		case 0x51 ... 0x57:
+		// case 0x30 ... 0x4f:
+		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E: case 0x3F: case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F:
+		// case 0x51 ... 0x57:
+		case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57:
 		case 0x59:
 		case 0x5a:
 		case 0x5c:
-		case 0x60 ... 0x7e:
+		// case 0x60 ... 0x7e:
+		case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E:
 			do_trans(vte, raw, STATE_GROUND, ACTION_ESC_DISPATCH);
 			return;
 		case 0x5b:
@@ -2209,18 +2223,22 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_ESC_INT:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
 			do_trans(vte, raw, STATE_NONE, ACTION_EXECUTE);
 			return;
-		case 0x20 ... 0x2f:
+		// case 0x20 ... 0x2f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F:
 			do_trans(vte, raw, STATE_NONE, ACTION_COLLECT);
 			return;
 		case 0x7f:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
-		case 0x30 ... 0x7e:
+		// case 0x30 ... 0x7e:
+		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E: case 0x3F: case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E:
 			do_trans(vte, raw, STATE_GROUND, ACTION_ESC_DISPATCH);
 			return;
 		}
@@ -2228,28 +2246,34 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_CSI_ENTRY:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
 			do_trans(vte, raw, STATE_NONE, ACTION_EXECUTE);
 			return;
 		case 0x7f:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
-		case 0x20 ... 0x2f:
+		// case 0x20 ... 0x2f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F:
 			do_trans(vte, raw, STATE_CSI_INT, ACTION_COLLECT);
 			return;
 		case 0x3a:
 			do_trans(vte, raw, STATE_CSI_IGNORE, ACTION_NONE);
 			return;
-		case 0x30 ... 0x39:
+		// case 0x30 ... 0x39:
+		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39:
 		case 0x3b:
 			do_trans(vte, raw, STATE_CSI_PARAM, ACTION_PARAM);
 			return;
-		case 0x3c ... 0x3f:
+		// case 0x3c ... 0x3f:
+		case 0x3C: case 0x3D: case 0x3E: case 0x3F:
 			do_trans(vte, raw, STATE_CSI_PARAM, ACTION_COLLECT);
 			return;
-		case 0x40 ... 0x7e:
+		// case 0x40 ... 0x7e:
+		case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E:
 			do_trans(vte, raw, STATE_GROUND, ACTION_CSI_DISPATCH);
 			return;
 		}
@@ -2257,12 +2281,15 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_CSI_PARAM:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
 			do_trans(vte, raw, STATE_NONE, ACTION_EXECUTE);
 			return;
-		case 0x30 ... 0x39:
+		// case 0x30 ... 0x39:
+		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39:
 		case 0x3b:
 			do_trans(vte, raw, STATE_NONE, ACTION_PARAM);
 			return;
@@ -2270,13 +2297,16 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
 		case 0x3a:
-		case 0x3c ... 0x3f:
+		// case 0x3c ... 0x3f:
+		case 0x3C: case 0x3D: case 0x3E: case 0x3F:
 			do_trans(vte, raw, STATE_CSI_IGNORE, ACTION_NONE);
 			return;
-		case 0x20 ... 0x2f:
+		// case 0x20 ... 0x2f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F:
 			do_trans(vte, raw, STATE_CSI_INT, ACTION_COLLECT);
 			return;
-		case 0x40 ... 0x7e:
+		// case 0x40 ... 0x7e:
+		case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E:
 			do_trans(vte, raw, STATE_GROUND, ACTION_CSI_DISPATCH);
 			return;
 		}
@@ -2284,21 +2314,26 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_CSI_INT:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
 			do_trans(vte, raw, STATE_NONE, ACTION_EXECUTE);
 			return;
-		case 0x20 ... 0x2f:
+		// case 0x20 ... 0x2f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F:
 			do_trans(vte, raw, STATE_NONE, ACTION_COLLECT);
 			return;
 		case 0x7f:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
-		case 0x30 ... 0x3f:
+		// case 0x30 ... 0x3f:
+		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E: case 0x3F:
 			do_trans(vte, raw, STATE_CSI_IGNORE, ACTION_NONE);
 			return;
-		case 0x40 ... 0x7e:
+		// case 0x40 ... 0x7e:
+		case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E:
 			do_trans(vte, raw, STATE_GROUND, ACTION_CSI_DISPATCH);
 			return;
 		}
@@ -2306,16 +2341,20 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_CSI_IGNORE:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
 			do_trans(vte, raw, STATE_NONE, ACTION_EXECUTE);
 			return;
-		case 0x20 ... 0x3f:
+		// case 0x20 ... 0x3f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E: case 0x3F:
 		case 0x7f:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
-		case 0x40 ... 0x7e:
+		// case 0x40 ... 0x7e:
+		case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E:
 			do_trans(vte, raw, STATE_GROUND, ACTION_NONE);
 			return;
 		}
@@ -2323,26 +2362,32 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_DCS_ENTRY:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
 		case 0x7f:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
 		case 0x3a:
 			do_trans(vte, raw, STATE_DCS_IGNORE, ACTION_NONE);
 			return;
-		case 0x20 ... 0x2f:
+		// case 0x20 ... 0x2f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F:
 			do_trans(vte, raw, STATE_DCS_INT, ACTION_COLLECT);
 			return;
-		case 0x30 ... 0x39:
+		// case 0x30 ... 0x39:
+		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39:
 		case 0x3b:
 			do_trans(vte, raw, STATE_DCS_PARAM, ACTION_PARAM);
 			return;
-		case 0x3c ... 0x3f:
+		// case 0x3c ... 0x3f:
+		case 0x3C: case 0x3D: case 0x3E: case 0x3F:
 			do_trans(vte, raw, STATE_DCS_PARAM, ACTION_COLLECT);
 			return;
-		case 0x40 ... 0x7e:
+		// case 0x40 ... 0x7e:
+		case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E:
 			do_trans(vte, raw, STATE_DCS_PASS, ACTION_NONE);
 			return;
 		}
@@ -2350,24 +2395,30 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_DCS_PARAM:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
 		case 0x7f:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
-		case 0x30 ... 0x39:
+		// case 0x30 ... 0x39:
+		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39:
 		case 0x3b:
 			do_trans(vte, raw, STATE_NONE, ACTION_PARAM);
 			return;
 		case 0x3a:
-		case 0x3c ... 0x3f:
+		// case 0x3c ... 0x3f:
+		case 0x3C: case 0x3D: case 0x3E: case 0x3F:
 			do_trans(vte, raw, STATE_DCS_IGNORE, ACTION_NONE);
 			return;
-		case 0x20 ... 0x2f:
+		// case 0x20 ... 0x2f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F:
 			do_trans(vte, raw, STATE_DCS_INT, ACTION_COLLECT);
 			return;
-		case 0x40 ... 0x7e:
+		// case 0x40 ... 0x7e:
+		case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E:
 			do_trans(vte, raw, STATE_DCS_PASS, ACTION_NONE);
 			return;
 		}
@@ -2375,19 +2426,24 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_DCS_INT:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
 		case 0x7f:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
-		case 0x20 ... 0x2f:
+		// case 0x20 ... 0x2f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F:
 			do_trans(vte, raw, STATE_NONE, ACTION_COLLECT);
 			return;
-		case 0x30 ... 0x3f:
+		// case 0x30 ... 0x3f:
+		case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E: case 0x3F:
 			do_trans(vte, raw, STATE_DCS_IGNORE, ACTION_NONE);
 			return;
-		case 0x40 ... 0x7e:
+		// case 0x40 ... 0x7e:
+		case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E:
 			do_trans(vte, raw, STATE_DCS_PASS, ACTION_NONE);
 			return;
 		}
@@ -2395,10 +2451,13 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_DCS_PASS:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
-		case 0x20 ... 0x7e:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
+		// case 0x20 ... 0x7e:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E: case 0x3F: case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E:
 			do_trans(vte, raw, STATE_NONE, ACTION_DCS_COLLECT);
 			return;
 		case 0x7f:
@@ -2412,10 +2471,13 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_DCS_IGNORE:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
-		case 0x20 ... 0x7f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
+		// case 0x20 ... 0x7f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E: case 0x3F: case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
 		case 0x9c:
@@ -2426,13 +2488,17 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_OSC_STRING:
 		switch (raw) {
-		case 0x00 ... 0x06:
-		case 0x08 ... 0x17:
+		// case 0x00 ... 0x06:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06:
+		// case 0x08 ... 0x17:
+		case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
-		case 0x20 ... 0x7f:
+		// case 0x20 ... 0x7f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E: case 0x3F: case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
 			do_trans(vte, raw, STATE_NONE, ACTION_OSC_COLLECT);
 			return;
 		case 0x07:
@@ -2444,10 +2510,13 @@ static void parse_data(struct tsm_vte *vte, uint32_t raw)
 		return;
 	case STATE_ST_IGNORE:
 		switch (raw) {
-		case 0x00 ... 0x17:
+		// case 0x00 ... 0x17:
+		case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07: case 0x08: case 0x09: case 0x0A: case 0x0B: case 0x0C: case 0x0D: case 0x0E: case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
 		case 0x19:
-		case 0x1c ... 0x1f:
-		case 0x20 ... 0x7f:
+		// case 0x1c ... 0x1f:
+		case 0x1C: case 0x1D: case 0x1E: case 0x1F:
+		// case 0x20 ... 0x7f:
+		case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27: case 0x28: case 0x29: case 0x2A: case 0x2B: case 0x2C: case 0x2D: case 0x2E: case 0x2F: case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35: case 0x36: case 0x37: case 0x38: case 0x39: case 0x3A: case 0x3B: case 0x3C: case 0x3D: case 0x3E: case 0x3F: case 0x40: case 0x41: case 0x42: case 0x43: case 0x44: case 0x45: case 0x46: case 0x47: case 0x48: case 0x49: case 0x4A: case 0x4B: case 0x4C: case 0x4D: case 0x4E: case 0x4F: case 0x50: case 0x51: case 0x52: case 0x53: case 0x54: case 0x55: case 0x56: case 0x57: case 0x58: case 0x59: case 0x5A: case 0x5B: case 0x5C: case 0x5D: case 0x5E: case 0x5F: case 0x60: case 0x61: case 0x62: case 0x63: case 0x64: case 0x65: case 0x66: case 0x67: case 0x68: case 0x69: case 0x6A: case 0x6B: case 0x6C: case 0x6D: case 0x6E: case 0x6F: case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77: case 0x78: case 0x79: case 0x7A: case 0x7B: case 0x7C: case 0x7D: case 0x7E: case 0x7F:
 			do_trans(vte, raw, STATE_NONE, ACTION_IGNORE);
 			return;
 		case 0x9c:
@@ -2688,7 +2757,7 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 			vte_write(vte, "\x09", 1);
 			return true;
 		case XKB_KEY_ISO_Left_Tab:
-			vte_write(vte, "\e[Z", 3);
+			vte_write(vte, ESC"[Z", 3);
 			return true;
 		case XKB_KEY_Linefeed:
 			vte_write(vte, "\x0a", 1);
@@ -2722,7 +2791,7 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 			return true;
 		case XKB_KEY_KP_Enter:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE) {
-				vte_write(vte, "\eOM", 3);
+				vte_write(vte, ESC"OM", 3);
 				return true;
 			}
 			/* fallthrough */
@@ -2733,177 +2802,177 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 				vte_write(vte, "\x0d", 1);
 			return true;
 		case XKB_KEY_Find:
-			vte_write(vte, "\e[1~", 4);
+			vte_write(vte, ESC"[1~", 4);
 			return true;
 		case XKB_KEY_Insert:
-			vte_write(vte, "\e[2~", 4);
+			vte_write(vte, ESC"[2~", 4);
 			return true;
 		case XKB_KEY_Delete:
-			vte_write(vte, "\e[3~", 4);
+			vte_write(vte, ESC"[3~", 4);
 			return true;
 		case XKB_KEY_Select:
-			vte_write(vte, "\e[4~", 4);
+			vte_write(vte, ESC"[4~", 4);
 			return true;
 		case XKB_KEY_Page_Up:
 		case XKB_KEY_KP_Page_Up:
-			vte_write(vte, "\e[5~", 4);
+			vte_write(vte, ESC"[5~", 4);
 			return true;
 		case XKB_KEY_KP_Page_Down:
 		case XKB_KEY_Page_Down:
-			vte_write(vte, "\e[6~", 4);
+			vte_write(vte, ESC"[6~", 4);
 			return true;
 		case XKB_KEY_Up:
 		case XKB_KEY_KP_Up:
 			if (mods & TSM_CONTROL_MASK) {
-				vte_write(vte, "\e[1;5A", 6);
+				vte_write(vte, ESC"[1;5A", 6);
 			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
-				vte_write(vte, "\eOA", 3);
+				vte_write(vte, ESC"OA", 3);
 			} else {
-				vte_write(vte, "\e[A", 3);
+				vte_write(vte, ESC"[A", 3);
 			}
 			return true;
 		case XKB_KEY_Down:
 		case XKB_KEY_KP_Down:
 			if (mods & TSM_CONTROL_MASK) {
-				vte_write(vte, "\e[1;5B", 6);
+				vte_write(vte, ESC"[1;5B", 6);
 			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
-				vte_write(vte, "\eOB", 3);
+				vte_write(vte, ESC"OB", 3);
 			} else {
-				vte_write(vte, "\e[B", 3);
+				vte_write(vte, ESC"[B", 3);
 			}
 			return true;
 		case XKB_KEY_Right:
 		case XKB_KEY_KP_Right:
 			if (mods & TSM_CONTROL_MASK) {
-				vte_write(vte, "\e[1;5C", 6);
+				vte_write(vte, ESC"[1;5C", 6);
 			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
-				vte_write(vte, "\eOC", 3);
+				vte_write(vte, ESC"OC", 3);
 			} else {
-				vte_write(vte, "\e[C", 3);
+				vte_write(vte, ESC"[C", 3);
 			}
 			return true;
 		case XKB_KEY_Left:
 		case XKB_KEY_KP_Left:
 			if (mods & TSM_CONTROL_MASK) {
-				vte_write(vte, "\e[1;5D", 6);
+				vte_write(vte, ESC"[1;5D", 6);
 			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
-				vte_write(vte, "\eOD", 3);
+				vte_write(vte, ESC"OD", 3);
 			} else {
-				vte_write(vte, "\e[D", 3);
+				vte_write(vte, ESC"[D", 3);
 			}
 			return true;
 		case XKB_KEY_KP_Insert:
 		case XKB_KEY_KP_0:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOp", 3);
+				vte_write(vte, ESC"Op", 3);
 			else
 				vte_write(vte, "0", 1);
 			return true;
 		case XKB_KEY_KP_1:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOq", 3);
+				vte_write(vte, ESC"Oq", 3);
 			else
 				vte_write(vte, "1", 1);
 			return true;
 		case XKB_KEY_KP_2:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOr", 3);
+				vte_write(vte, ESC"Or", 3);
 			else
 				vte_write(vte, "2", 1);
 			return true;
 		case XKB_KEY_KP_3:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOs", 3);
+				vte_write(vte, ESC"Os", 3);
 			else
 				vte_write(vte, "3", 1);
 			return true;
 		case XKB_KEY_KP_4:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOt", 3);
+				vte_write(vte, ESC"Ot", 3);
 			else
 				vte_write(vte, "4", 1);
 			return true;
 		case XKB_KEY_KP_5:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOu", 3);
+				vte_write(vte, ESC"Ou", 3);
 			else
 				vte_write(vte, "5", 1);
 			return true;
 		case XKB_KEY_KP_6:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOv", 3);
+				vte_write(vte, ESC"Ov", 3);
 			else
 				vte_write(vte, "6", 1);
 			return true;
 		case XKB_KEY_KP_7:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOw", 3);
+				vte_write(vte, ESC"Ow", 3);
 			else
 				vte_write(vte, "7", 1);
 			return true;
 		case XKB_KEY_KP_8:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOx", 3);
+				vte_write(vte, ESC"Ox", 3);
 			else
 				vte_write(vte, "8", 1);
 			return true;
 		case XKB_KEY_KP_9:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOy", 3);
+				vte_write(vte, ESC"Oy", 3);
 			else
 				vte_write(vte, "9", 1);
 			return true;
 		case XKB_KEY_KP_Subtract:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOm", 3);
+				vte_write(vte, ESC"Om", 3);
 			else
 				vte_write(vte, "-", 1);
 			return true;
 		case XKB_KEY_KP_Separator:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOl", 3);
+				vte_write(vte, ESC"Ol", 3);
 			else
 				vte_write(vte, ",", 1);
 			return true;
 		case XKB_KEY_KP_Delete:
 		case XKB_KEY_KP_Decimal:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOn", 3);
+				vte_write(vte, ESC"On", 3);
 			else
 				vte_write(vte, ".", 1);
 			return true;
 		case XKB_KEY_KP_Equal:
 		case XKB_KEY_KP_Divide:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOj", 3);
+				vte_write(vte, ESC"Oj", 3);
 			else
 				vte_write(vte, "/", 1);
 			return true;
 		case XKB_KEY_KP_Multiply:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOo", 3);
+				vte_write(vte, ESC"Oo", 3);
 			else
 				vte_write(vte, "*", 1);
 			return true;
 		case XKB_KEY_KP_Add:
 			if (vte->flags & TSM_VTE_FLAG_KEYPAD_APPLICATION_MODE)
-				vte_write(vte, "\eOk", 3);
+				vte_write(vte, ESC"Ok", 3);
 			else
 				vte_write(vte, "+", 1);
 			return true;
 		case XKB_KEY_Home:
 		case XKB_KEY_KP_Home:
 			if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE)
-				vte_write(vte, "\eOH", 3);
+				vte_write(vte, ESC"OH", 3);
 			else
-				vte_write(vte, "\e[H", 3);
+				vte_write(vte, ESC"[H", 3);
 			return true;
 		case XKB_KEY_End:
 		case XKB_KEY_KP_End:
 			if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE)
-				vte_write(vte, "\eOF", 3);
+				vte_write(vte, ESC"OF", 3);
 			else
-				vte_write(vte, "\e[F", 3);
+				vte_write(vte, ESC"[F", 3);
 			return true;
 		case XKB_KEY_KP_Space:
 			vte_write(vte, " ", 1);
@@ -2918,133 +2987,133 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 		case XKB_KEY_F1:
 		case XKB_KEY_KP_F1:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[23~", 5);
+				vte_write(vte, ESC"[23~", 5);
 			else
-				vte_write(vte, "\eOP", 3);
+				vte_write(vte, ESC"OP", 3);
 			return true;
 		case XKB_KEY_F2:
 		case XKB_KEY_KP_F2:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[24~", 5);
+				vte_write(vte, ESC"[24~", 5);
 			else
-				vte_write(vte, "\eOQ", 3);
+				vte_write(vte, ESC"OQ", 3);
 			return true;
 		case XKB_KEY_F3:
 		case XKB_KEY_KP_F3:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[25~", 5);
+				vte_write(vte, ESC"[25~", 5);
 			else
-				vte_write(vte, "\eOR", 3);
+				vte_write(vte, ESC"OR", 3);
 			return true;
 		case XKB_KEY_F4:
 		case XKB_KEY_KP_F4:
 			if (mods & TSM_SHIFT_MASK)
-				//vte_write(vte, "\e[1;2S", 6);
-				vte_write(vte, "\e[26~", 5);
+				//vte_write(vte, ESC"[1;2S", 6);
+				vte_write(vte, ESC"[26~", 5);
 			else
-				vte_write(vte, "\eOS", 3);
+				vte_write(vte, ESC"OS", 3);
 			return true;
 		case XKB_KEY_F5:
 			if (mods & TSM_SHIFT_MASK)
-				//vte_write(vte, "\e[15;2~", 7);
-				vte_write(vte, "\e[28~", 5);
+				//vte_write(vte, ESC"[15;2~", 7);
+				vte_write(vte, ESC"[28~", 5);
 			else
-				vte_write(vte, "\e[15~", 5);
+				vte_write(vte, ESC"[15~", 5);
 			return true;
 		case XKB_KEY_F6:
 			if (mods & TSM_SHIFT_MASK)
-				//vte_write(vte, "\e[17;2~", 7);
-				vte_write(vte, "\e[29~", 5);
+				//vte_write(vte, ESC"[17;2~", 7);
+				vte_write(vte, ESC"[29~", 5);
 			else
-				vte_write(vte, "\e[17~", 5);
+				vte_write(vte, ESC"[17~", 5);
 			return true;
 		case XKB_KEY_F7:
 			if (mods & TSM_SHIFT_MASK)
-				//vte_write(vte, "\e[18;2~", 7);
-				vte_write(vte, "\e[31~", 5);
+				//vte_write(vte, ESC"[18;2~", 7);
+				vte_write(vte, ESC"[31~", 5);
 			else
-				vte_write(vte, "\e[18~", 5);
+				vte_write(vte, ESC"[18~", 5);
 			return true;
 		case XKB_KEY_F8:
 			if (mods & TSM_SHIFT_MASK)
-				//vte_write(vte, "\e[19;2~", 7);
-				vte_write(vte, "\e[32~", 5);
+				//vte_write(vte, ESC"[19;2~", 7);
+				vte_write(vte, ESC"[32~", 5);
 			else
-				vte_write(vte, "\e[19~", 5);
+				vte_write(vte, ESC"[19~", 5);
 			return true;
 		case XKB_KEY_F9:
 			if (mods & TSM_SHIFT_MASK)
-				//vte_write(vte, "\e[20;2~", 7);
-				vte_write(vte, "\e[33~", 5);
+				//vte_write(vte, ESC"[20;2~", 7);
+				vte_write(vte, ESC"[33~", 5);
 			else
-				vte_write(vte, "\e[20~", 5);
+				vte_write(vte, ESC"[20~", 5);
 			return true;
 		case XKB_KEY_F10:
 			if (mods & TSM_SHIFT_MASK)
-				//vte_write(vte, "\e[21;2~", 7);
-				vte_write(vte, "\e[34~", 5);
+				//vte_write(vte, ESC"[21;2~", 7);
+				vte_write(vte, ESC"[34~", 5);
 			else
-				vte_write(vte, "\e[21~", 5);
+				vte_write(vte, ESC"[21~", 5);
 			return true;
 		case XKB_KEY_F11:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[23;2~", 7);
+				vte_write(vte, ESC"[23;2~", 7);
 			else
-				vte_write(vte, "\e[23~", 5);
+				vte_write(vte, ESC"[23~", 5);
 			return true;
 		case XKB_KEY_F12:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[24;2~", 7);
+				vte_write(vte, ESC"[24;2~", 7);
 			else
-				vte_write(vte, "\e[24~", 5);
+				vte_write(vte, ESC"[24~", 5);
 			return true;
 		case XKB_KEY_F13:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[25;2~", 7);
+				vte_write(vte, ESC"[25;2~", 7);
 			else
-				vte_write(vte, "\e[25~", 5);
+				vte_write(vte, ESC"[25~", 5);
 			return true;
 		case XKB_KEY_F14:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[26;2~", 7);
+				vte_write(vte, ESC"[26;2~", 7);
 			else
-				vte_write(vte, "\e[26~", 5);
+				vte_write(vte, ESC"[26~", 5);
 			return true;
 		case XKB_KEY_F15:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[28;2~", 7);
+				vte_write(vte, ESC"[28;2~", 7);
 			else
-				vte_write(vte, "\e[28~", 5);
+				vte_write(vte, ESC"[28~", 5);
 			return true;
 		case XKB_KEY_F16:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[29;2~", 7);
+				vte_write(vte, ESC"[29;2~", 7);
 			else
-				vte_write(vte, "\e[29~", 5);
+				vte_write(vte, ESC"[29~", 5);
 			return true;
 		case XKB_KEY_F17:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[31;2~", 7);
+				vte_write(vte, ESC"[31;2~", 7);
 			else
-				vte_write(vte, "\e[31~", 5);
+				vte_write(vte, ESC"[31~", 5);
 			return true;
 		case XKB_KEY_F18:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[32;2~", 7);
+				vte_write(vte, ESC"[32;2~", 7);
 			else
-				vte_write(vte, "\e[32~", 5);
+				vte_write(vte, ESC"[32~", 5);
 			return true;
 		case XKB_KEY_F19:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[33;2~", 7);
+				vte_write(vte, ESC"[33;2~", 7);
 			else
-				vte_write(vte, "\e[33~", 5);
+				vte_write(vte, ESC"[33~", 5);
 			return true;
 		case XKB_KEY_F20:
 			if (mods & TSM_SHIFT_MASK)
-				vte_write(vte, "\e[34;2~", 7);
+				vte_write(vte, ESC"[34;2~", 7);
 			else
-				vte_write(vte, "\e[34~", 5);
+				vte_write(vte, ESC"[34~", 5);
 			return true;
 	}
 
@@ -3125,7 +3194,7 @@ bool tsm_vte_handle_mouse(struct tsm_vte *vte, unsigned int cell_x,
 		}
 
 		reply_flags = (button | modifiers) + 0x20;
-		snprintf((char*) &buffer, sizeof(buffer), "\e[M%c%c%c", reply_flags, cell_x, cell_y);
+		snprintf((char*) &buffer, sizeof(buffer), ESC"[M%c%c%c", reply_flags, cell_x, cell_y);
 
 		vte_write(vte, buffer, strlen(buffer));
 		return true;
@@ -3142,7 +3211,7 @@ bool tsm_vte_handle_mouse(struct tsm_vte *vte, unsigned int cell_x,
 			vte->mouse_last_row = cell_y;
 		}
 
-		snprintf((char*) &buffer, sizeof(buffer), "\e[<%d;%d;%d%c", reply_flags, cell_x, cell_y, pressed ? 'M' : 'm');
+		snprintf((char*) &buffer, sizeof(buffer), ESC"[<%d;%d;%d%c", reply_flags, cell_x, cell_y, pressed ? 'M' : 'm');
 
 		vte_write(vte, buffer, strlen(buffer));
 		return true;
@@ -3152,7 +3221,7 @@ bool tsm_vte_handle_mouse(struct tsm_vte *vte, unsigned int cell_x,
 			pressed = true;
 		}
 
-		snprintf((char*) &buffer, sizeof(buffer), "\e[<%d;%d;%d%c", reply_flags, pixel_x, pixel_y, pressed ? 'M' : 'm');
+		snprintf((char*) &buffer, sizeof(buffer), ESC"[<%d;%d;%d%c", reply_flags, pixel_x, pixel_y, pressed ? 'M' : 'm');
 
 		vte_write(vte, buffer, strlen(buffer));
 		return true;

@@ -44,6 +44,10 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#ifdef _MSC_VER
+#define bzero(b,len) (memset((b), '\0', (len)), (void) 0)
+#endif
+
 /* lower address-space is protected from user-allocation, so this is invalid */
 #define TEST_INVALID_PTR ((void*)0x10)
 
@@ -77,7 +81,7 @@ static inline Suite *test_create_suite(const char *name, ...)
 	s = suite_create(name);
 
 	va_start(list, name);
-	while ((fn = va_arg(list, TCase *(*)(void))))
+	while ((fn = va_arg(list, void*)))
 		suite_add_tcase(s, fn());
 	va_end(list);
 

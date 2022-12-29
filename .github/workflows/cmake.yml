@@ -26,6 +26,12 @@ jobs:
             build_type: RelWithDebInfo,
             gtk_tsm: "Off"
           }
+        - {
+            name: "Windows",
+            os: windows-latest,
+            build_type: Release,
+            gtk_tsm: "Off"
+          }
 
     steps:
     - uses: actions/checkout@v2
@@ -35,26 +41,46 @@ jobs:
         echo github.event.action: ${{ github.event.action }}
         echo github.event_name: ${{ github.event_name }}
 
+    - name: Install Conan
+      run: pip3 install conan
+
     - name: Install dependencies on Ubuntu
       if: startsWith(matrix.config.name, 'Ubuntu')
-      run: sudo apt-get install -y check valgrind libgtk-3-dev libpango1.0-dev pkg-config
+      run: sudo apt-get install -y valgrind libgtk-3-dev libpango1.0-dev pkg-config
 
-    - name: Install dependencies on macOS
-      if: startsWith(matrix.config.name, 'macOS')
-      run: brew install check
+    - name: Create build directory on Unix
+      if: ${{ !startsWith(matrix.config.name, 'Windows') }}
+      run: mkdir build
 
-    - name: Configure CMake on Ubuntu
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ./build -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DBUILD_TESTING=On -DBUILD_GTKTSM=${{ matrix.config.gtk_tsm }}
+    - name: Create build directory on Windows
+      if: startsWith(matrix.config.name, 'Windows')
+      run: md build
 
-    - name: Build
-      # Build your program with the given configuration
-      run: cmake --build ./build --config ${{ matrix.config.build_type }}
+    - name: Install libcheck
+      working-directory: ./build
+      run: conan install .. --build=missing
+
+    - name: Configure CMake on Unix
+      if: ${{ !startsWith(matrix.config.name, 'Windows') }}
+      working-directory: ./build
+      run: cmake .. -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} -DBUILD_TESTING=On -DBUILD_GTKTSM=${{ matrix.config.gtk_tsm }}
+
+    - name: Configure CMake on Windows
+      if: startsWith(matrix.config.name, 'Windows')
+      working-directory: ./build
+      run: cmake .. -G "Visual Studio 17" -DBUILD_SHARED_LIBS=Off -DBUILD_TESTING=On -DBUILD_GTKTSM=${{ matrix.config.gtk_tsm }}
+
+    - name: Build on Unix
+      if: ${{ !startsWith(matrix.config.name, 'Windows') }}
+      working-directory: ./build
+      run: cmake --build .
+
+    - name: Build on Windows
+      if: startsWith(matrix.config.name, 'Windows')
+      working-directory: ./build
+      run: cmake --build . --config ${{ matrix.config.build_type }}
 
     - name: Test
       working-directory: ./build
-      # Execute tests defined by the CMake configuration.  
-      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
       run: ctest -C ${{ matrix.config.build_type }}
 

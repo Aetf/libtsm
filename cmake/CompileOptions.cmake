@@ -68,15 +68,17 @@ endif()
 function(add_libtsm_compile_options target)
     # Make all files include "config.h" by default. This shouldn't cause any
     # problems and we cannot forget to include it anymore.
-    target_compile_options(${target} PRIVATE
-        -include ${CMAKE_BINARY_DIR}/config.h
-        -pipe
-        -fno-common
-        -ffast-math
-        -fno-strict-aliasing
-        -ffunction-sections
-        -fdata-sections
-    )
+    if(NOT MSVC)
+        target_compile_options(${target} PRIVATE
+            -include ${CMAKE_BINARY_DIR}/config.h
+            -pipe
+            -fno-common
+            -ffast-math
+            -fno-strict-aliasing
+            -ffunction-sections
+            -fdata-sections
+        )
+    endif()
 
     # Linker flags
     ## Make the linker discard all unused symbols.
@@ -84,6 +86,8 @@ function(add_libtsm_compile_options target)
         set(LDFLAGS "-Wl,-dead_strip -Wl,-dead_strip_dylibs -Wl,-bind_at_load")
     elseif(UNIX)
         set(LDFLAGS "-Wl,--as-needed -Wl,--gc-sections -Wl,-z,relro -Wl,-z,now")
+    elseif(MSVC)
+        set(LDFLAGS "/OPT:REF")
     else()
         message("Unsupported platform, you are on your own.")
     endif()

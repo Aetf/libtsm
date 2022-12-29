@@ -25,11 +25,24 @@ This is a personal modified version. For more information, please refer to its o
 [91335]: https://bugs.freedesktop.org/show_bug.cgi?id=91335
 
 ## Build
+
+On Linux and macOS:
+
 ```bash
 mkdir build && cd build
 cmake ..
 make
 make install
+```
+
+On Windows with Visual Studio 2022 (in a x64 Native Tools prompt):
+
+```bash
+md build
+cd build
+cmake .. -G "Visual Studio 17"
+cmake --build . --config Debug
+cmake --install . --prefix YOUR_TARGET_DIR
 ```
 
 ### Build options

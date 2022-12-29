@@ -27,6 +27,8 @@
 #include "libtsm.h"
 #include "libtsm-int.h"
 
+#define ESC "\x1b"
+
 char write_buffer[512];
 
 bool mouse_cb_called = false;
@@ -85,7 +87,7 @@ START_TEST(test_mouse_cb_x10)
 	char *msg;
 
 	/* Set X10 Mode */
-	msg = "\e[?9h";
+	msg = ESC"[?9h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
 	ck_assert(mouse_cb_called);
@@ -101,33 +103,33 @@ START_TEST(test_mouse_x10)
 	int r;
 
 	/* Set X10 Mode */
-	msg = "\e[?9h";
+	msg = ESC"[?9h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
 	/* left click on left upper cell (0, 0) should be translated to (1, 1) in output */
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 0, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[M !!";
+	expected = ESC"[M !!";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* right click on (0, 0) */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 2, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[M\"!!";
+	expected = ESC"[M\"!!";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* middle click on (0, 0) */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 1, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[M!!!";
+	expected = ESC"[M!!!";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* left click out of range (299, 279) */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 299, 279, 0, 0, 0, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[M \xff\xff";
+	expected = ESC"[M \xff\xff";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 }
@@ -138,7 +140,7 @@ START_TEST(test_mouse_cb_sgr)
 	char *msg;
 
 	/* Set SGR Mode */
-	msg = "\e[?1006h";
+	msg = ESC"[?1006h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
 	/* mouse_cb should not be called if event type is not set */
@@ -151,7 +153,7 @@ START_TEST(test_mouse_cb_sgr)
 
 	/* Set Button Events */
 	bzero(&write_buffer, sizeof(write_buffer));
-	msg = "\e[?1002h";
+	msg = ESC"[?1002h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
 	ck_assert(mouse_cb_called);
@@ -167,54 +169,54 @@ START_TEST(test_mouse_sgr)
 	int r;
 
 	/* Set SGR Mode and only notify for mouse button clicks */
-	msg = "\e[?1006h\e[?1002h";
+	msg = ESC"[?1006h"ESC"[?1002h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
 	/* left click on left upper cell (0, 0) should be translated to (1, 1) in output */
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 0, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[<0;1;1M";
+	expected = ESC"[<0;1;1M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* button release event for (1, 1) */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 0, TSM_MOUSE_EVENT_RELEASED, 0);
-	expected = "\e[<0;1;1m";
+	expected = ESC"[<0;1;1m";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* button 1 (middle mouse button) */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 1, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[<1;1;1M";
+	expected = ESC"[<1;1;1M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* button 2 (right mouse button) */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 2, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[<2;1;1M";
+	expected = ESC"[<2;1;1M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* button 4 (mouse wheel up scroll) */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 4, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[<64;1;1M";
+	expected = ESC"[<64;1;1M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* button 5 (mouse wheel down scroll) */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 5, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[<65;1;1M";
+	expected = ESC"[<65;1;1M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* check for (50, 120) */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 49, 119, 0, 0, 0, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[<0;50;120M";
+	expected = ESC"[<0;50;120M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 }
@@ -227,12 +229,12 @@ START_TEST(test_mouse_sgr_cell_change)
 	int r;
 
 	/* Set SGR Mode and only notify for mouse button clicks */
-	msg = "\e[?1006h\e[?1003h";
+	msg = ESC"[?1006h"ESC"[?1003h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
 	/* move over (0, 0) */
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 0, TSM_MOUSE_EVENT_MOVED, 0);
-	expected = "\e[<35;1;1M";
+	expected = ESC"[<35;1;1M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
@@ -244,14 +246,14 @@ START_TEST(test_mouse_sgr_cell_change)
 	/* different cells must be reported */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 1, 1, 0, 0, 0, TSM_MOUSE_EVENT_MOVED, 0);
-	expected = "\e[<35;2;2M";
+	expected = ESC"[<35;2;2M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* a click must be reported in all cases */
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 1, 1, 0, 0, 0, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[<0;2;2M";
+	expected = ESC"[<0;2;2M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 }
@@ -262,7 +264,7 @@ START_TEST(test_mouse_cb_pixels)
 	char *msg;
 
 	/* Set Pixel Mode */
-	msg = "\e[?1016h";
+	msg = ESC"[?1016h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
 	/* mouse_cb should not be called if event type is not set */
@@ -275,7 +277,7 @@ START_TEST(test_mouse_cb_pixels)
 
 	/* Set Button Events */
 	bzero(&write_buffer, sizeof(write_buffer));
-	msg = "\e[?1003h";
+	msg = ESC"[?1003h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
 	ck_assert(mouse_cb_called);
@@ -291,23 +293,23 @@ START_TEST(test_mouse_pixels)
 	int r;
 
 	/* Set SGR Mode and only notify for mouse button clicks */
-	msg = "\e[?1016h\e[?1003h";
+	msg = ESC"[?1016h"ESC"[?1003h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
 	tsm_vte_handle_mouse(vte, 0, 0, 236, 120, 0, TSM_MOUSE_EVENT_MOVED, 0);
-	expected = "\e[<35;236;120M";
+	expected = ESC"[<35;236;120M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 236, 120, 0, TSM_MOUSE_EVENT_PRESSED, 0);
-	expected = "\e[<0;236;120M";
+	expected = ESC"[<0;236;120M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	bzero(&write_buffer, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 236, 120, 0, TSM_MOUSE_EVENT_RELEASED, 0);
-	expected = "\e[<0;236;120m";
+	expected = ESC"[<0;236;120m";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 }
