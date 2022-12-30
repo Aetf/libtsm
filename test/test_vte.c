@@ -206,6 +206,12 @@ START_TEST(test_vte_backspace_key)
 	ck_assert(r);
 	r = tsm_vte_handle_keyboard(vte, XKB_KEY_BackSpace, 0177, 0, 0177);
 	ck_assert(r);
+
+	tsm_vte_unref(vte);
+	vte = NULL;
+
+	tsm_screen_unref(screen);
+	screen = NULL;
 }
 END_TEST
 

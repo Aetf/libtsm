@@ -538,10 +538,12 @@ void tsm_screen_unref(struct tsm_screen *con)
 		line_free(con->main_lines[i]);
 		line_free(con->alt_lines[i]);
 	}
+
 	free(con->main_lines);
 	free(con->alt_lines);
 	free(con->tab_ruler);
 	tsm_symbol_table_unref(con->sym_table);
+	tsm_screen_clear_sb(con);
 	free(con);
 }
 
