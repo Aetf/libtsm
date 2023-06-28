@@ -197,7 +197,7 @@ struct tsm_vte {
 	unsigned int alt_cursor_y;
 };
 
-static uint8_t color_palette[TSM_COLOR_NUM][3] = {
+static uint8_t color_palette_legacy[TSM_COLOR_NUM][3] = {
 	[TSM_COLOR_BLACK]         = {   0,   0,   0 }, /* black */
 	[TSM_COLOR_RED]           = { 205,   0,   0 }, /* red */
 	[TSM_COLOR_GREEN]         = {   0, 205,   0 }, /* green */
@@ -216,6 +216,29 @@ static uint8_t color_palette[TSM_COLOR_NUM][3] = {
 	[TSM_COLOR_WHITE]         = { 255, 255, 255 }, /* white */
 
 	[TSM_COLOR_FOREGROUND]    = { 229, 229, 229 }, /* light grey */
+	[TSM_COLOR_BACKGROUND]    = {   0,   0,   0 }, /* black */
+};
+
+// vga palette from https://en.wikipedia.org/wiki/ANSI_escape_code
+static uint8_t color_palette_vga[TSM_COLOR_NUM][3] = {
+	[TSM_COLOR_BLACK]         = {   0,   0,   0 }, /* black */
+	[TSM_COLOR_RED]           = { 170,   0,   0 }, /* red */
+	[TSM_COLOR_GREEN]         = {   0, 170,   0 }, /* green */
+	[TSM_COLOR_YELLOW]        = { 170,  85,   0 }, /* yellow */
+	[TSM_COLOR_BLUE]          = {   0,   0, 170 }, /* blue */
+	[TSM_COLOR_MAGENTA]       = { 170,   0, 170 }, /* magenta */
+	[TSM_COLOR_CYAN]          = {   0, 170, 170 }, /* cyan */
+	[TSM_COLOR_LIGHT_GREY]    = { 170, 170, 170 }, /* light grey */
+	[TSM_COLOR_DARK_GREY]     = {  85,  85,  85 }, /* dark grey */
+	[TSM_COLOR_LIGHT_RED]     = { 255,  85,  85 }, /* light red */
+	[TSM_COLOR_LIGHT_GREEN]   = {  85, 255,  85 }, /* light green */
+	[TSM_COLOR_LIGHT_YELLOW]  = { 255, 255,  85 }, /* light yellow */
+	[TSM_COLOR_LIGHT_BLUE]    = {  85,  85, 255 }, /* light blue */
+	[TSM_COLOR_LIGHT_MAGENTA] = { 255,  85, 255 }, /* light magenta */
+	[TSM_COLOR_LIGHT_CYAN]    = {  85, 255, 255 }, /* light cyan */
+	[TSM_COLOR_WHITE]         = { 255, 255, 255 }, /* white */
+
+	[TSM_COLOR_FOREGROUND]    = { 170, 170, 170 }, /* light grey */
 	[TSM_COLOR_BACKGROUND]    = {   0,   0,   0 }, /* black */
 };
 
@@ -354,7 +377,7 @@ static uint8_t color_palette_base16_light[TSM_COLOR_NUM][3] = {
 static uint8_t (*get_palette(struct tsm_vte *vte))[3]
 {
 	if (!vte->palette_name)
-		return color_palette;
+		return color_palette_legacy;
 
 	if (!strcmp(vte->palette_name, "custom") && vte->custom_palette_storage)
 		return vte->custom_palette_storage;
@@ -370,8 +393,12 @@ static uint8_t (*get_palette(struct tsm_vte *vte))[3]
 		return color_palette_base16_dark;
 	if (!strcmp(vte->palette_name, "base16-light"))
 		return color_palette_base16_light;
+	if (!strcmp(vte->palette_name, "vga"))
+		return color_palette_vga;
+	if (!strcmp(vte->palette_name, "legacy"))
+		return color_palette_legacy;
 
-	return color_palette;
+	return color_palette_legacy;
 }
 
 /* Several effects may occur when non-RGB colors are used. For instance, if bold
@@ -562,7 +589,7 @@ int tsm_vte_set_palette(struct tsm_vte *vte, const char *palette_name)
 SHL_EXPORT
 int tsm_vte_set_custom_palette(struct tsm_vte *vte, uint8_t (*palette)[3])
 {
-	const size_t palette_byte_size = sizeof(color_palette);
+	const size_t palette_byte_size = sizeof(color_palette_legacy);
 	uint8_t (*tmp)[3] = NULL;
 
 	if (!vte)
