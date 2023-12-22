@@ -274,6 +274,44 @@ START_TEST(test_vte_decrqm_no_reset)
 }
 END_TEST
 
+#define assert_tsm_screen_cursor_pos(screen, x1, y1)                 \
+	do {                                                             \
+		ck_assert_int_eq(x1, tsm_screen_get_cursor_x(screen));       \
+		ck_assert_int_eq(y1, tsm_screen_get_cursor_y(screen));       \
+	} while(0)
+
+/* test for https://github.com/Aetf/kmscon/issues/78 */
+START_TEST(test_vte_csi_cursor_up_down)
+{
+	struct tsm_screen *screen;
+	struct tsm_vte *vte;
+	int r;
+
+	r = tsm_screen_new(&screen, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_new(&vte, screen, write_cb, NULL, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	tsm_vte_input(vte, "\n123", 4);
+	assert_tsm_screen_cursor_pos(screen, 3, 1);
+
+	// cursor move up, first col
+	tsm_vte_input(vte, "\033[1F", 4);
+	assert_tsm_screen_cursor_pos(screen, 0, 0);
+
+	// cursor move down, first col
+	tsm_vte_input(vte, "\033[1E", 4);
+	assert_tsm_screen_cursor_pos(screen, 0, 1);
+
+	tsm_vte_unref(vte);
+	vte = NULL;
+
+	tsm_screen_unref(screen);
+	screen = NULL;
+}
+END_TEST
+
 TEST_DEFINE_CASE(misc)
 	TEST(test_vte_init)
 	TEST(test_vte_null)
@@ -281,6 +319,7 @@ TEST_DEFINE_CASE(misc)
 	TEST(test_vte_backspace_key)
 	TEST(test_vte_get_flags)
 	TEST(test_vte_decrqm_no_reset)
+	TEST(test_vte_csi_cursor_up_down)
 TEST_END_CASE
 
 // clang-format off
