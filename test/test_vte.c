@@ -28,6 +28,7 @@
 #include "test_common.h"
 
 #include <xkbcommon/xkbcommon-keysyms.h>
+#include <stdio.h>
 
 static void log_cb(void *data, const char *file, int line, const char *func, const char *subs,
 				   unsigned int sev, const char *format, va_list args)
@@ -292,6 +293,8 @@ START_TEST(test_vte_csi_cursor_up_down)
 	struct tsm_screen *screen;
 	struct tsm_vte *vte;
 	int r;
+	int h, w;
+	char csi_cmd[64];
 
 	r = tsm_screen_new(&screen, log_cb, NULL);
 	ck_assert_int_eq(r, 0);
@@ -309,6 +312,19 @@ START_TEST(test_vte_csi_cursor_up_down)
 	// cursor move down, first col
 	tsm_vte_input(vte, "\033[1E", 4);
 	assert_tsm_screen_cursor_pos(screen, 0, 1);
+
+	h = tsm_screen_get_height(screen);
+	w = tsm_screen_get_width(screen);
+
+	// move cursor up out of screen, should at first line
+	sprintf(csi_cmd, "\033[%dF", h + 10);
+	tsm_vte_input(vte, csi_cmd, strlen(csi_cmd));
+	assert_tsm_screen_cursor_pos(screen, 0, 0);
+
+	// move cursor down out of screen, should at last line
+	sprintf(csi_cmd, "\033[%dE", h + 10);
+	tsm_vte_input(vte, csi_cmd, strlen(csi_cmd));
+	assert_tsm_screen_cursor_pos(screen, 0, h - 1);
 
 	tsm_vte_unref(vte);
 	vte = NULL;
