@@ -60,6 +60,14 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#ifdef _MSC_VER
+#define UNUSED
+#define VALIDATE_PRINTF(a,b)
+#else
+#define UNUSED __attribute__((__unused__))
+#define VALIDATE_PRINTF(a,b) __attribute__((format(printf, (a), (b))))
+#endif
+
 enum llog_severity {
 	LLOG_FATAL = 0,
 	LLOG_ALERT = 1,
@@ -81,7 +89,7 @@ typedef void (*llog_submit_t) (void *data,
 			       const char *format,
 			       va_list args);
 
-static inline __attribute__((format(printf, 8, 9)))
+static inline VALIDATE_PRINTF(8, 9)
 void llog_format(llog_submit_t llog,
 		 void *data,
 		 const char *file,
@@ -104,7 +112,7 @@ void llog_format(llog_submit_t llog,
 }
 
 #ifndef LLOG_SUBSYSTEM
-static const char *LLOG_SUBSYSTEM __attribute__((__unused__));
+static const char *LLOG_SUBSYSTEM UNUSED;
 #endif
 
 #define LLOG_DEFAULT __FILE__, __LINE__, __func__, LLOG_SUBSYSTEM
@@ -124,7 +132,7 @@ static const char *LLOG_SUBSYSTEM __attribute__((__unused__));
 		    (format), \
 		    ##__VA_ARGS__)
 
-static inline __attribute__((format(printf, 4, 5)))
+static inline VALIDATE_PRINTF(4, 5)
 void llog_dummyf(llog_submit_t llog, void *data, unsigned int sev,
 		 const char *format, ...)
 {

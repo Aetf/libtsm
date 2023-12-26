@@ -291,9 +291,19 @@ static void screen_scroll_up(struct tsm_screen *con, unsigned int num)
 	 * also be small enough so we do not get stack overflows. */
 	if (num > 128) {
 		screen_scroll_up(con, 128);
-		return screen_scroll_up(con, num - 128);
+		screen_scroll_up(con, num - 128);
+		return;
 	}
+
+#ifdef _MSC_VER
+	struct line **cache = malloc(sizeof(struct line *) * num);
+	if (!cache) {
+		llog_warning(con, "Out of memory");
+		return;
+	}
+#else
 	struct line *cache[num];
+#endif
 
 	for (i = 0; i < num; ++i) {
 		pos = con->margin_top + i;
@@ -340,6 +350,10 @@ static void screen_scroll_up(struct tsm_screen *con, unsigned int num)
 			}
 		}
 	}
+
+#ifdef _MSC_VER
+	free(cache);
+#endif
 }
 
 static void screen_scroll_down(struct tsm_screen *con, unsigned int num)
@@ -359,9 +373,19 @@ static void screen_scroll_down(struct tsm_screen *con, unsigned int num)
 	/* see screen_scroll_up() for an explanation */
 	if (num > 128) {
 		screen_scroll_down(con, 128);
-		return screen_scroll_down(con, num - 128);
+		screen_scroll_down(con, num - 128);
+		return;
 	}
+
+#ifdef _MSC_VER
+	struct line **cache = malloc(sizeof(struct line *) * num);
+	if (!cache) {
+		llog_warning(con, "Out of memory");
+		return;
+	}
+#else
 	struct line *cache[num];
+#endif
 
 	for (i = 0; i < num; ++i) {
 		cache[i] = con->lines[con->margin_bottom - i];
@@ -384,6 +408,10 @@ static void screen_scroll_down(struct tsm_screen *con, unsigned int num)
 		if (!con->sel_end.line && con->sel_end.y >= 0)
 			con->sel_end.y += num;
 	}
+
+#ifdef _MSC_VER
+	free(cache);
+#endif
 }
 
 static void screen_write(struct tsm_screen *con, unsigned int x,
@@ -1394,7 +1422,15 @@ void tsm_screen_insert_lines(struct tsm_screen *con, unsigned int num)
 	if (num > max)
 		num = max;
 
+#ifdef _MSC_VER
+	struct line **cache = malloc(sizeof(struct line *) * num);
+	if (!cache) {
+		llog_warning(con, "Out of memory");
+		return;
+	}
+#else
 	struct line *cache[num];
+#endif
 
 	for (i = 0; i < num; ++i) {
 		cache[i] = con->lines[con->margin_bottom - i];
@@ -1412,6 +1448,10 @@ void tsm_screen_insert_lines(struct tsm_screen *con, unsigned int num)
 	}
 
 	con->cursor_x = 0;
+
+#ifdef _MSC_VER
+	free(cache);
+#endif
 }
 
 SHL_EXPORT
@@ -1434,7 +1474,15 @@ void tsm_screen_delete_lines(struct tsm_screen *con, unsigned int num)
 	if (num > max)
 		num = max;
 
+#ifdef _MSC_VER
+	struct line **cache = malloc(sizeof(struct line *) * num);
+	if (!cache) {
+		llog_warning(con, "Out of memory");
+		return;
+	}
+#else
 	struct line *cache[num];
+#endif
 
 	for (i = 0; i < num; ++i) {
 		cache[i] = con->lines[con->cursor_y + i];
@@ -1452,6 +1500,10 @@ void tsm_screen_delete_lines(struct tsm_screen *con, unsigned int num)
 	}
 
 	con->cursor_x = 0;
+
+#ifdef _MSC_VER
+	free(cache);
+#endif
 }
 
 SHL_EXPORT

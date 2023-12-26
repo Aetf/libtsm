@@ -25,7 +25,11 @@
 #include <string.h>
 #include "shl-htable.h"
 
+#ifdef _MSC_VER
+#define COLD
+#else
 #define COLD __attribute__((cold))
+#endif
 
 struct htable {
 	/* KEEP IN SYNC WITH "struct shl_htable_int" */

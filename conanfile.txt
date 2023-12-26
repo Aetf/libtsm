@@ -1,0 +1,8 @@
+[requires]
+libcheck/0.15.2
+
+[generators]
+cmake_find_package
+
+[options]
+libcheck:with_subunit=False

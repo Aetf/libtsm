@@ -19,6 +19,9 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "Usage: mkdir build; cmake ..")
 endif()
 
+# Search in the build dir for Find*.cmake files provided by Conan
+set(CMAKE_MODULE_PATH ${CMAKE_BINARY_DIR})
+
 # Include utilities
 include(cmake/Utilities.cmake)
 include(cmake/JoinPaths.cmake)
@@ -102,8 +105,8 @@ endif()
 
 if(BUILD_TESTING)
     enable_testing()
-    find_package(Check)
-    set_package_properties(Check PROPERTIES
+    find_package(check REQUIRED)
+    set_package_properties(check PROPERTIES
         TYPE REQUIRED
         PURPOSE "For testing"
     )
