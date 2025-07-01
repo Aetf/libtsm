@@ -191,7 +191,6 @@ static void swap_selections(struct selection_pos **a, struct selection_pos **b)
 static void norm_selection(struct tsm_screen *con, struct selection_pos **start, struct selection_pos **end)
 {
 	struct line *iter;
-	struct selection_pos *buffer;
 
 	if ((*end)->line == NULL && (*end)->y == SELECTION_TOP) {
 		swap_selections(start, end);
