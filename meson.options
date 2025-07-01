@@ -1,0 +1,7 @@
+
+option('extra_debug', type: 'boolean', value: false,
+  description: 'Enable non-standard debug option')
+option('tests', type: 'boolean', value: true,
+  description: 'Build unit tests')
+option('gtktsm', type: 'boolean', value: false,
+  description: 'tests using gtktsm')
