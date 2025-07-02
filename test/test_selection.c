@@ -192,7 +192,7 @@ START_TEST(test_screen_copy_line_scrolled)
 	r = tsm_screen_resize(screen, 80, 40);
 	ck_assert_int_eq(r, 0);
 
-	for (int i = 0; i < 39; i++) {
+	for (i = 0; i < 39; i++) {
 		tsm_screen_newline(screen);
 	}
 
@@ -305,7 +305,7 @@ START_TEST(test_screen_copy_lines_scrolled)
 	r = tsm_screen_resize(screen, 80, 40);
 	ck_assert_int_eq(r, 0);
 
-	for (int i = 0; i < 37; i++) {
+	for (i = 0; i < 37; i++) {
 		tsm_screen_newline(screen);
 	}
 	tsm_screen_newline(screen);
@@ -439,7 +439,7 @@ END_TEST
 START_TEST(test_screen_copy_line_sb_scrolled)
 {
 	struct tsm_screen *screen;
-	int r, i;
+	int r;
 	char *str = NULL;
 
 	r = tsm_screen_new(&screen, NULL, NULL);
@@ -554,7 +554,7 @@ START_TEST(test_screen_copy_line_sb_scrolled_invalid)
 	ck_assert_int_eq(screen->sel_end.y, 0);
 
 	/* force the selected text to scroll up */
-	for (int i = 0; i < 40; i++) {
+	for (i = 0; i < 40; i++) {
 		tsm_screen_newline(screen);
 	}
 
@@ -724,7 +724,7 @@ START_TEST(test_screen_copy_lines_sb_scrolled)
 	ck_assert_int_eq(screen->sel_end.y, 2);
 
 	/* force the selected text to scroll into the sb */
-	for (int i = 0; i < 40; i++) {
+	for (i = 0; i < 40; i++) {
 		tsm_screen_newline(screen);
 	}
 
@@ -815,7 +815,7 @@ START_TEST(test_screen_copy_lines_sb_scrolled_cut_off)
 	ck_assert_int_eq(screen->sel_end.y, 2);
 
 	/* force the selected text to scroll up */
-	for (int i = 0; i < 39; i++) {
+	for (i = 0; i < 39; i++) {
 		tsm_screen_newline(screen);
 	}
 

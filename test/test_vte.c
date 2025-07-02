@@ -293,7 +293,7 @@ START_TEST(test_vte_csi_cursor_up_down)
 	struct tsm_screen *screen;
 	struct tsm_vte *vte;
 	int r;
-	int h, w;
+	int h;
 	char csi_cmd[64];
 
 	r = tsm_screen_new(&screen, log_cb, NULL);
@@ -314,7 +314,6 @@ START_TEST(test_vte_csi_cursor_up_down)
 	assert_tsm_screen_cursor_pos(screen, 0, 1);
 
 	h = tsm_screen_get_height(screen);
-	w = tsm_screen_get_width(screen);
 
 	// move cursor up out of screen, should at first line
 	sprintf(csi_cmd, "\033[%dF", h + 10);
