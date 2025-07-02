@@ -152,7 +152,7 @@ START_TEST(test_screen_resize_alt_colors)
 	tsm_screen_set_flags(screen, TSM_SCREEN_ALTERNATE);
 
 	/* change background color to red */
-	bzero(&new_attr, sizeof(new_attr));
+	memset(&new_attr, 0, sizeof(new_attr));
 	new_attr.br = 255;
 	new_attr.bg = 0;
 	new_attr.bb = 0;
