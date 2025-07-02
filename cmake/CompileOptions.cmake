@@ -81,7 +81,7 @@ function(add_libtsm_compile_options target)
     # Linker flags
     ## Make the linker discard all unused symbols.
     if(APPLE)
-        set(LDFLAGS "-Wl,-dead_strip -Wl,-dead_strip_dylibs -Wl,-bind_at_load")
+        set(LDFLAGS "-Wl,-dead_strip -Wl,-dead_strip_dylibs -Wl")
     elseif(UNIX)
         set(LDFLAGS "-Wl,--as-needed -Wl,--gc-sections -Wl,-z,relro -Wl,-z,now")
     else()
