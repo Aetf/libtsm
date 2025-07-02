@@ -51,18 +51,7 @@ G_DEFINE_TYPE_WITH_PRIVATE(GtkTsmWin, gtktsm_win, GTK_TYPE_WINDOW);
 
 static void win_realize(GtkWidget *widget)
 {
-	GtkTsmWin *win = GTKTSM_WIN(widget);
-	GdkWindow *w;
-	GdkRGBA col;
-
 	GTK_WIDGET_CLASS(gtktsm_win_parent_class)->realize(widget);
-
-	w = gtk_widget_get_window(GTK_WIDGET(win));
-	col.red = 0.0;
-	col.green = 0.0;
-	col.blue = 0.0;
-	col.alpha = 1.0;
-	gdk_window_set_background_rgba(w, &col);
 }
 
 static gboolean win_title_fn(GtkTsmTerminal *term, gchar *title, gpointer data)
