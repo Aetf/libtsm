@@ -33,7 +33,7 @@ static void write_string(struct tsm_screen *screen, const char *str)
 	struct tsm_screen_attr attr;
 	int i;
 
-	bzero(&attr, sizeof(attr));
+	memset(&attr, 0, sizeof(attr));
 	attr.fccode = 37; /* white */
 	attr.bccode = 40; /* black */
 

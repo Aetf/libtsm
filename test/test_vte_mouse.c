@@ -68,7 +68,7 @@ void setup()
 	mouse_track_mode = 0;
 	mouse_track_pixels = false;
 
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 }
 
 void teardown()
@@ -111,21 +111,21 @@ START_TEST(test_mouse_x10)
 	ck_assert_int_eq(r, 0);
 
 	/* right click on (0, 0) */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer,0,  sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 2, TSM_MOUSE_EVENT_PRESSED, 0);
 	expected = "\e[M\"!!";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* middle click on (0, 0) */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer,0,  sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 1, TSM_MOUSE_EVENT_PRESSED, 0);
 	expected = "\e[M!!!";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* left click out of range (299, 279) */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer,0,  sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 299, 279, 0, 0, 0, TSM_MOUSE_EVENT_PRESSED, 0);
 	expected = "\e[M \xff\xff";
 	r = memcmp(&write_buffer, expected, strlen(expected));
@@ -150,7 +150,7 @@ START_TEST(test_mouse_cb_sgr)
 	mouse_track_pixels = false;
 
 	/* Set Button Events */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	msg = "\e[?1002h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
@@ -177,42 +177,42 @@ START_TEST(test_mouse_sgr)
 	ck_assert_int_eq(r, 0);
 
 	/* button release event for (1, 1) */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 0, TSM_MOUSE_EVENT_RELEASED, 0);
 	expected = "\e[<0;1;1m";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* button 1 (middle mouse button) */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 1, TSM_MOUSE_EVENT_PRESSED, 0);
 	expected = "\e[<1;1;1M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* button 2 (right mouse button) */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 2, TSM_MOUSE_EVENT_PRESSED, 0);
 	expected = "\e[<2;1;1M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* button 4 (mouse wheel up scroll) */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 4, TSM_MOUSE_EVENT_PRESSED, 0);
 	expected = "\e[<64;1;1M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* button 5 (mouse wheel down scroll) */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 5, TSM_MOUSE_EVENT_PRESSED, 0);
 	expected = "\e[<65;1;1M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* check for (50, 120) */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 49, 119, 0, 0, 0, TSM_MOUSE_EVENT_PRESSED, 0);
 	expected = "\e[<0;50;120M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
@@ -237,19 +237,19 @@ START_TEST(test_mouse_sgr_cell_change)
 	ck_assert_int_eq(r, 0);
 
 	/* repeated reportings of the same cell should be ignored */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 0, 0, 0, TSM_MOUSE_EVENT_MOVED, 0);
 	ck_assert_int_eq(write_buffer[0], 0);
 
 	/* different cells must be reported */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 1, 1, 0, 0, 0, TSM_MOUSE_EVENT_MOVED, 0);
 	expected = "\e[<35;2;2M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
 	/* a click must be reported in all cases */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 1, 1, 0, 0, 0, TSM_MOUSE_EVENT_PRESSED, 0);
 	expected = "\e[<0;2;2M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
@@ -274,7 +274,7 @@ START_TEST(test_mouse_cb_pixels)
 	mouse_track_pixels = false;
 
 	/* Set Button Events */
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	msg = "\e[?1003h";
 	tsm_vte_input(vte, msg, strlen(msg));
 
@@ -299,13 +299,13 @@ START_TEST(test_mouse_pixels)
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 236, 120, 0, TSM_MOUSE_EVENT_PRESSED, 0);
 	expected = "\e[<0;236;120M";
 	r = memcmp(&write_buffer, expected, strlen(expected));
 	ck_assert_int_eq(r, 0);
 
-	bzero(&write_buffer, sizeof(write_buffer));
+	memset(&write_buffer, 0, sizeof(write_buffer));
 	tsm_vte_handle_mouse(vte, 0, 0, 236, 120, 0, TSM_MOUSE_EVENT_RELEASED, 0);
 	expected = "\e[<0;236;120m";
 	r = memcmp(&write_buffer, expected, strlen(expected));
