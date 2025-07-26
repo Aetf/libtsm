@@ -2799,6 +2799,8 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 		case XKB_KEY_KP_Up:
 			if (mods & TSM_CONTROL_MASK) {
 				vte_write(vte, "\e[1;5A", 6);
+			} else if (mods & TSM_SHIFT_MASK) {
+				vte_write(vte, "\e[1;2A", 6);
 			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOA", 3);
 			} else {
@@ -2809,6 +2811,8 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 		case XKB_KEY_KP_Down:
 			if (mods & TSM_CONTROL_MASK) {
 				vte_write(vte, "\e[1;5B", 6);
+			} else if (mods & TSM_SHIFT_MASK) {
+				vte_write(vte, "\e[1;2B", 6);
 			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOB", 3);
 			} else {
@@ -2819,6 +2823,8 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 		case XKB_KEY_KP_Right:
 			if (mods & TSM_CONTROL_MASK) {
 				vte_write(vte, "\e[1;5C", 6);
+			} else if (mods & TSM_SHIFT_MASK) {
+				vte_write(vte, "\e[1;2C", 6);
 			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOC", 3);
 			} else {
@@ -2829,6 +2835,8 @@ bool tsm_vte_handle_keyboard(struct tsm_vte *vte, uint32_t keysym,
 		case XKB_KEY_KP_Left:
 			if (mods & TSM_CONTROL_MASK) {
 				vte_write(vte, "\e[1;5D", 6);
+			} else if (mods & TSM_SHIFT_MASK) {
+				vte_write(vte, "\e[1;2D", 6);
 			} else if (vte->flags & TSM_VTE_FLAG_CURSOR_KEY_MODE) {
 				vte_write(vte, "\eOD", 3);
 			} else {
