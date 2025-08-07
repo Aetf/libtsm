@@ -12,6 +12,15 @@ libtsm_srcs = [
 version=meson.project_version()
 major=version.split('.')[0]
 
+# Export symbol with version
+link_flags = '-Wl,--version-script=' + meson.current_source_dir() + '/libtsm.sym'
+code = 'int main() { return 0; }'
+cc = meson.get_compiler('c')
+
+if not cc.links(code, args: link_flags, name: '-Wl,--version-script=...')
+    link_flags = [ '-export-symbols-regex=^tsm_' ]
+endif
+
 libtsm = shared_library(
     'tsm',
     libtsm_srcs,
@@ -19,6 +28,7 @@ libtsm = shared_library(
     install: true,
     version: version,
     soversion: major,
+    link_args: link_flags,
 )
 
 libtsm_dep = declare_dependency(
