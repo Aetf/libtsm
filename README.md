@@ -1,6 +1,6 @@
 # TSM - Terminal Emulator State Machine
 
-![Build Status](https://github.com/aetf/libtsm/actions/workflows/meson.yml/badge.svg?branch=develop)
+![Build Status](https://github.com/aetf/libtsm/actions/workflows/meson.yml/badge.svg?branch=main)
 
 TSM is a state machine for DEC VT100-VT520 compatible terminal emulators. It
 tries to support all common standards while keeping compatibility to existing
@@ -43,7 +43,7 @@ The following options are available:
 |:---:|:---|:---:|
 | tests | Whether build the test suite | ON |
 | extra_debug | Whether to enable several non-standard debug options | OFF |
-| gtktsm | Whether to build the gtktsm example. This is linux-only as it uses epoll and friends. Therefor is disabled by default. | OFF |
+| gtktsm | Whether to build the gtktsm example. This is linux-only as it uses epoll and friends. Therefore is disabled by default. | OFF |
 
 ## Dependencies
 ### Required
