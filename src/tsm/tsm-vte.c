@@ -110,6 +110,7 @@ enum parser_action {
 #define CSI_PLUS	0x0100		/* CSI: + */
 #define CSI_POPEN	0x0200		/* CSI: ( */
 #define CSI_PCLOSE	0x0400		/* CSI: ) */
+#define CSI_HASH	0x0800		/* CSI: # */
 
 /* max CSI arguments */
 #define CSI_ARG_MAX 16
@@ -999,6 +1000,9 @@ static void do_collect(struct tsm_vte *vte, uint32_t data)
 	case ')':
 		vte->csi_flags |= CSI_PCLOSE;
 		break;
+	case '#':
+		vte->csi_flags |= CSI_HASH;
+		break;
 	}
 }
 
@@ -1131,6 +1135,18 @@ static void do_esc(struct tsm_vte *vte, uint32_t data)
 			/* S8C1T */
 			/* Enable 8bit C1 mode */
 			vte->flags |= TSM_VTE_FLAG_USE_C1;
+			return;
+		}
+		break;
+	case '8':
+		if (vte->csi_flags & CSI_HASH) {
+			/* DECALN */
+			/* DEC Screen Alignment Test */
+			vte->flags &= ~FLAG_ORIGIN_MODE;
+			tsm_screen_reset_flags(vte->con, TSM_SCREEN_REL_ORIGIN);
+			screen_fill(vte->con, 'E', &vte->def_attr);
+			tsm_screen_move_to(vte->con, 0, 0);
+			tsm_screen_set_margins(vte->con, 1, vte->con->size_y);
 			return;
 		}
 		break;

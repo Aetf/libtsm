@@ -343,10 +343,91 @@ TEST_DEFINE_CASE(misc)
 	TEST(test_vte_csi_cursor_up_down)
 TEST_END_CASE
 
+START_TEST(test_vte_DECALN)
+{
+	struct tsm_screen *screen;
+	struct tsm_vte *vte;
+	struct tsm_screen_attr attr;
+	const char *input;
+	unsigned int x, y, i;
+	tsm_age_t age;
+	int r;
+
+	r = tsm_screen_new(&screen, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	tsm_screen_set_flags(screen, TSM_SCREEN_AUTO_WRAP);
+
+	i = 0;
+	for (y = 0; y < screen->size_y; ++y) {
+		for (x = 0; x < screen->size_x; ++x, ++i) {
+			attr.fr = i * 1;
+			attr.fg = i * 2;
+			attr.fb = i * 3;
+			attr.br = i * 4;
+			attr.bg = i * 5;
+			attr.bb = i * 6;
+			attr.bold = !!(i & 0x01);
+			attr.italic = !!(i & 0x02);
+			attr.underline = !!(i & 0x04);
+			attr.inverse = !!(i & 0x08);
+			attr.protect = !!(i & 0x10);
+			attr.blink = !!(i & 0x20);
+			tsm_screen_write(screen, '!' + (i % ('~' - '!')), &attr);
+		}
+	}
+
+	r = tsm_screen_set_margins(screen, 3, screen->size_y - 5);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_new(&vte, screen, write_cb, NULL, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	tsm_vte_get_def_attr(vte, &attr);
+	age = screen->age;
+
+	input = "\x1b[?6h" /* DECSET(DECOM) */ "\x1b#8" /* DECALN */;
+	tsm_vte_input(vte, input, strlen(input));
+
+	i = 0;
+	for (y = 0; y < screen->size_y; ++y) {
+		for (x = 0; x < screen->size_x; ++x, ++i) {
+			ck_assert_uint_eq(screen->lines[y]->cells[x].ch, 'E');
+			ck_assert_uint_eq(screen->lines[y]->cells[x].width, 1);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.fr, attr.fr);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.fg, attr.fg);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.fb, attr.fb);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.br, attr.br);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.bg, attr.bg);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.bb, attr.bb);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.bold, 0);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.italic, 0);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.underline, 0);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.inverse, 0);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.protect, 0);
+			ck_assert_uint_eq(screen->lines[y]->cells[x].attr.blink, 0);
+			ck_assert_uint_gt(screen->lines[y]->cells[x].age, age);
+		}
+	}
+
+	ck_assert_uint_ne(tsm_screen_get_flags(screen) & TSM_SCREEN_REL_ORIGIN, TSM_SCREEN_REL_ORIGIN);
+	ck_assert_uint_eq(tsm_screen_get_cursor_x(screen), 0);
+	ck_assert_uint_eq(tsm_screen_get_cursor_y(screen), 0);
+	ck_assert_uint_eq(screen->margin_top, 0);
+	ck_assert_uint_eq(screen->margin_bottom, screen->size_y - 1);
+	ck_assert_uint_lt(screen->cursor_x, screen->size_x);
+}
+END_TEST
+
+TEST_DEFINE_CASE(control_sequences)
+	TEST(test_vte_DECALN)
+TEST_END_CASE
+
 // clang-format off
 TEST_DEFINE(
 	TEST_SUITE(vte,
 		TEST_CASE(misc),
+		TEST_CASE(control_sequences),
 		TEST_END
 	)
 )
