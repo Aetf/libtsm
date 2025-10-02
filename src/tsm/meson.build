@@ -19,6 +19,9 @@ cc = meson.get_compiler('c')
 
 if not cc.links(code, args: link_flags, name: '-Wl,--version-script=...')
     link_flags = [ '-export-symbols-regex=^tsm_' ]
+    if not cc.links(code, args: link_flags, name: '-Wl,--export-symbol-regex')
+        link_flags = []
+    endif
 endif
 
 libtsm = shared_library(
