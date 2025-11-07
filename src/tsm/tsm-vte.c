@@ -2059,12 +2059,52 @@ static void do_osc_collect(struct tsm_vte *vte, uint32_t val) {
 	vte->osc_len += len;
 }
 
-static void do_osc_end(struct tsm_vte *vte) {
+static void vte_write_xcolor(struct tsm_vte *vte, const char *code,
+			     const char *end_seq,
+			     uint8_t r, uint8_t g, uint8_t b)
+{
+	char buf[32];
+	snprintf(buf, sizeof(buf), "\e]%s;rgb:%02x%02x/%02x%02x/%02x%02x%s",
+		 code, r, r, g, g, b, b, end_seq);
+	vte_write(vte, buf, strlen(buf));
+}
+
+static bool do_osc_internal(struct tsm_vte *vte, const char *end_seq)
+{
+	if (!strncmp(vte->osc_arg, "10;?", 4)) {
+		vte_write_xcolor(vte, "10", end_seq,
+				 vte->def_attr.fr, vte->def_attr.fg,
+				 vte->def_attr.fb);
+		return true;
+	}
+	if (!strncmp(vte->osc_arg, "11;?", 4)) {
+		vte_write_xcolor(vte, "11", end_seq,
+				 vte->def_attr.br, vte->def_attr.bg,
+				 vte->def_attr.bb);
+		return true;
+	}
+	return false;
+}
+
+/* XTerm OSC responses use the same sequence terminator used in the query */
+static const char *osc_end_seq(uint32_t end)
+{
+	if (end == 0x07) {
+		return "\x07";
+	}
+	return "\x1b\x5c";
+}
+
+static void do_osc_end(struct tsm_vte *vte, uint32_t val) {
+	const char *end_seq = osc_end_seq(val);
+	vte->osc_arg[vte->osc_len] = 0;
+
+	if (do_osc_internal(vte, end_seq)) {
+		return;
+	}
 	if (!vte->osc_cb) {
 		return;
 	}
-
-	vte->osc_arg[vte->osc_len] = 0;
 	vte->osc_cb(vte, vte->osc_arg, vte->osc_len, vte->osc_data);
 }
 
@@ -2115,7 +2155,7 @@ static void do_action(struct tsm_vte *vte, uint32_t data, int action)
 			do_osc_collect(vte, data);
 			break;
 		case ACTION_OSC_END:
-			do_osc_end(vte);
+			do_osc_end(vte, data);
 			break;
 		default:
 			llog_warning(vte, "invalid action %d", action);

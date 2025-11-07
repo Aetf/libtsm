@@ -164,14 +164,72 @@ START_TEST(test_vte_custom_palette)
 }
 END_TEST
 
+static bool write_cb_called = false;
+
 static void checking_write_cb(struct tsm_vte *vte, const char *u8, size_t len, void *data)
 {
+	write_cb_called = true;
+
 	ck_assert_ptr_ne(vte, NULL);
 	ck_assert_ptr_ne(u8, NULL);
 	ck_assert_uint_gt(len, 0);
 
 	ck_assert_mem_eq(u8, data, len);
 }
+
+static void checked_vte_input(struct tsm_vte *vte, const char *u8, size_t len)
+{
+	write_cb_called = false;
+	tsm_vte_input(vte, u8, len);
+	ck_assert(write_cb_called);
+}
+
+START_TEST(test_vte_osc_query)
+{
+	struct tsm_screen *screen;
+	struct tsm_vte *vte;
+	int r;
+	char expected_output[32];
+	const char *input;
+
+	r = tsm_screen_new(&screen, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_new(&vte, screen, checking_write_cb, expected_output, NULL, NULL);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_set_custom_palette(vte, test_palette);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_set_palette(vte, "custom");
+	ck_assert_int_eq(r, 0);
+
+	// query foreground, end_seq = BEL
+	input = "\e]10;?\x07";
+	strcpy(expected_output, "\e]10;rgb:1010/2222/3434\x07");
+	checked_vte_input(vte, input, strlen(input));
+
+	// query foreground, end_seq = ST
+	input = "\e]10;?\e\\";
+	strcpy(expected_output, "\e]10;rgb:1010/2222/3434\e\\");
+	checked_vte_input(vte, input, strlen(input));
+
+	// ignore additional parameters after foreground query
+	input = "\e]10;?;11;?\x07";
+	strcpy(expected_output, "\e]10;rgb:1010/2222/3434\x07");
+	checked_vte_input(vte, input, strlen(input));
+
+	// query background
+	input = "\e]11;?\x07";
+	strcpy(expected_output, "\e]11;rgb:1111/2323/3535\x07");
+	checked_vte_input(vte, input, strlen(input));
+
+	// ignore additional parameters after background query
+	input = "\e]11;?;12;?\x07";
+	strcpy(expected_output, "\e]11;rgb:1111/2323/3535\x07");
+	checked_vte_input(vte, input, strlen(input));
+}
+END_TEST
 
 START_TEST(test_vte_backspace_key)
 {
@@ -337,6 +395,7 @@ TEST_DEFINE_CASE(misc)
 	TEST(test_vte_init)
 	TEST(test_vte_null)
 	TEST(test_vte_custom_palette)
+	TEST(test_vte_osc_query)
 	TEST(test_vte_backspace_key)
 	TEST(test_vte_get_flags)
 	TEST(test_vte_decrqm_no_reset)
