@@ -81,6 +81,44 @@ static void selection_set(struct tsm_screen *con, struct selection_pos *sel,
 	sel->y = y;
 }
 
+static void word_select(struct tsm_screen *con,
+			unsigned int posx,
+			unsigned int posy)
+{
+	int start, end;
+	struct line *line;
+
+	selection_set(con, &con->sel_start, posx, posy);
+
+	if (con->sel_start.line)
+		line = con->sel_start.line;
+	else
+	 	line = con->lines[con->sel_start.y];
+
+	if (!line || line->cells[posx].ch == ' ')
+		return;
+
+	for (start = posx; start >= 0; start--) {
+		if (line->cells[start].ch == ' ') {
+			start++;
+			break;
+		}
+	}
+	if (start < 0)
+		start = 0;
+
+	for (end = posx; end < line->size; end++) {
+		if (line->cells[end].ch == ' ' || line->cells[end].ch == '\n' ||
+		    line->cells[end].ch == '\0') {
+			end--;
+			break;
+		}
+	}
+	con->sel_start.x = start;
+	selection_set(con, &con->sel_end, end, posy);
+	con->sel_active = true;
+}
+
 SHL_EXPORT
 void tsm_screen_selection_reset(struct tsm_screen *con)
 {
@@ -124,6 +162,21 @@ void tsm_screen_selection_target(struct tsm_screen *con,
 	con->age = con->age_cnt;
 
 	selection_set(con, &con->sel_end, posx, posy);
+}
+
+SHL_EXPORT
+void tsm_screen_selection_word(struct tsm_screen *con,
+			       unsigned int posx,
+			       unsigned int posy)
+{
+	if (!con)
+		return;
+
+	screen_inc_age(con);
+	/* TODO: more sophisticated ageing */
+	con->age = con->age_cnt;
+
+	word_select(con, posx, posy);
 }
 
 /* calculates the line length from the beginning to the last non zero character */

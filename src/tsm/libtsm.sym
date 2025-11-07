@@ -132,3 +132,8 @@ global:
 	tsm_screen_sb_get_line_count;
 	tsm_screen_sb_get_line_pos;
 } LIBTSM_4;
+
+LIBTSM_4_3 {
+global:
+	tsm_screen_selection_word;
+} LIBTSM_4_1;
