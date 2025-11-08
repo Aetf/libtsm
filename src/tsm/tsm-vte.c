@@ -2084,7 +2084,7 @@ static void do_osc_collect(struct tsm_vte *vte, uint32_t val) {
 	vte->osc_len += len;
 }
 
-static void vte_write_xcolor(struct tsm_vte *vte, const char *code,
+static void vte_write_xcolor(struct tsm_vte *vte, char *code,
 			     const char *end_seq,
 			     uint8_t r, uint8_t g, uint8_t b)
 {
@@ -2094,8 +2094,48 @@ static void vte_write_xcolor(struct tsm_vte *vte, const char *code,
 	vte_write(vte, buf, strlen(buf));
 }
 
+static void do_osc_4(struct tsm_vte *vte, const char *data, const char *end_seq)
+{
+	char buf[32];
+	uint8_t cr, cg, cb;
+	const char *c = data;
+
+	while (*c) {
+		// parse color code
+		unsigned int code = 0;
+		while (*c >= '0' && *c <= '9') {
+			code = code * 10 + (*c++ - '0');
+		}
+		if (*c++ != ';') {
+			break;
+		}
+
+		// parse value field
+		if (*c == '?') {
+			c++;
+			// handle rgb value query
+			snprintf(buf, sizeof(buf), "4;%u", code);
+			lookup_color(vte, code, &cr, &cg, &cb);
+			vte_write_xcolor(vte, buf, end_seq, cr, cg, cb);
+		} else {
+			// parsing of new rgb value to assign to code would go
+			// here. For now, skip past field contents.
+			while (*c && *c != ';') {
+				c++;
+			}
+		}
+		if (*c++ != ';') {
+			break;
+		}
+	}
+}
+
 static bool do_osc_internal(struct tsm_vte *vte, const char *end_seq)
 {
+	if (!strncmp(vte->osc_arg, "4;", 2)) {
+		do_osc_4(vte, vte->osc_arg + 2, end_seq);
+		return true;
+	}
 	if (!strncmp(vte->osc_arg, "10;?", 4)) {
 		vte_write_xcolor(vte, "10", end_seq,
 				 vte->def_attr.fr, vte->def_attr.fg,

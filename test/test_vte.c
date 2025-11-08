@@ -231,6 +231,73 @@ START_TEST(test_vte_osc_query)
 }
 END_TEST
 
+unsigned char write_buffer[512];
+unsigned char *write_buffer_p = write_buffer;
+
+static void storing_write_cb(struct tsm_vte *vte, const char *u8, size_t len, void *data)
+{
+	ck_assert_ptr_ne(vte, NULL);
+	ck_assert_ptr_ne(u8, NULL);
+
+	memcpy(write_buffer_p, u8, len);
+	write_buffer_p[len] = '\0';
+	write_buffer_p += len;
+}
+
+static void storing_write_cb_reset(void)
+{
+	memset(write_buffer, 0, sizeof(write_buffer));
+	write_buffer_p = write_buffer;
+}
+
+START_TEST(test_vte_osc4)
+{
+	struct tsm_screen *screen;
+	struct tsm_vte *vte;
+	int r;
+	const char *input;
+
+	r = tsm_screen_new(&screen, log_cb, NULL);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_new(&vte, screen, storing_write_cb, NULL, NULL, NULL);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_set_custom_palette(vte, test_palette);
+	ck_assert_int_eq(r, 0);
+
+	r = tsm_vte_set_palette(vte, "custom");
+	ck_assert_int_eq(r, 0);
+
+	// query palette entries
+	storing_write_cb_reset();
+	input = "\e]4;1;?;13;?;3;?\x07";
+	const char *expected =
+		"\e]4;1;rgb:0101/1313/2525\x07"
+		"\e]4;13;rgb:0d0d/1f1f/3131\x07"
+		"\e]4;3;rgb:0303/1515/2727\x07";
+	tsm_vte_input(vte, input, strlen(input));
+	ck_assert_mem_eq(write_buffer, expected, strlen(expected));
+	ck_assert_int_eq(write_buffer_p - write_buffer, strlen(expected));
+
+	// query cube & grayscale entries
+	storing_write_cb_reset();
+	input = "\e]4;110;?;254;?;\x07";
+	expected =
+		"\e]4;110;rgb:8787/afaf/d7d7\x07"
+		"\e]4;254;rgb:e4e4/e4e4/e4e4\x07";
+	tsm_vte_input(vte, input, strlen(input));
+	ck_assert_mem_eq(write_buffer, expected, strlen(expected));
+
+	// ignore color change requests, incomplete messages
+	storing_write_cb_reset();
+	input = "\e]4;1;rgb:1111/2222/3333;2\x07";
+	tsm_vte_input(vte, input, strlen(input));
+	ck_assert_ptr_eq(write_buffer, write_buffer_p);
+	storing_write_cb_reset();
+}
+END_TEST
+
 START_TEST(test_vte_backspace_key)
 {
 	struct tsm_screen *screen;
@@ -396,6 +463,7 @@ TEST_DEFINE_CASE(misc)
 	TEST(test_vte_null)
 	TEST(test_vte_custom_palette)
 	TEST(test_vte_osc_query)
+	TEST(test_vte_osc4)
 	TEST(test_vte_backspace_key)
 	TEST(test_vte_get_flags)
 	TEST(test_vte_decrqm_no_reset)
