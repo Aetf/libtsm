@@ -1220,9 +1220,45 @@ static void do_esc(struct tsm_vte *vte, uint32_t data)
 	}
 }
 
-static void csi_attribute(struct tsm_vte *vte)
+static void palette_rgb(struct tsm_vte *vte, int code, uint8_t *cr,
+			uint8_t *cg, uint8_t *cb)
+{
+	*cr = vte->palette[code][0];
+	*cg = vte->palette[code][1];
+	*cb = vte->palette[code][2];
+}
+
+static void cube_rgb(int code, uint8_t *cr, uint8_t *cg, uint8_t *cb)
 {
 	static const uint8_t bval[6] = { 0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff };
+	code -= 16;
+	*cb = bval[code % 6];
+	code /= 6;
+	*cg = bval[code % 6];
+	code /= 6;
+	*cr = bval[code % 6];
+}
+
+static void greyscale_rgb(int code, uint8_t *cr, uint8_t *cg, uint8_t *cb)
+{
+	uint8_t lightness = (code - 232) * 10 + 8;
+	*cr = *cg = *cb = lightness;
+}
+
+static void lookup_color(struct tsm_vte *vte, int color, uint8_t *cr,
+			 uint8_t *cg, uint8_t *cb)
+{
+	if (color < 16) {
+		palette_rgb(vte, color, cr, cg, cb);
+	} else if (color < 232) {
+		cube_rgb(color, cr, cg, cb);
+	} else {
+		greyscale_rgb(color, cr, cg, cb);
+	}
+}
+
+static void csi_attribute(struct tsm_vte *vte)
+{
 	unsigned int i, code, val;
 	uint8_t cr, cg, cb;
 
@@ -1390,19 +1426,8 @@ static void csi_attribute(struct tsm_vte *vte)
 				if (code < 16) {
 					//no change
 					cb = cg = cr = 0;
-				} else if (code < 232) {
-					code -= 16;
-					cb = bval[code % 6];
-					code /= 6;
-					cg = bval[code % 6];
-					code /= 6;
-					cr = bval[code % 6];
-					code = -1;
 				} else {
-					code = (code - 232) * 10 + 8;
-					cr = code;
-					cg = code;
-					cb = code;
+					lookup_color(vte, code, &cr, &cg, &cb);
 					code = -1;
 				}
 				i += 2;
