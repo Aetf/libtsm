@@ -2132,6 +2132,11 @@ static void do_osc_4(struct tsm_vte *vte, const char *data, const char *end_seq)
 
 static bool do_osc_internal(struct tsm_vte *vte, const char *end_seq)
 {
+	// OSC 4, 10, and 11 query or change the RGB values of color numbers in
+	// the foreground/background (SGR 38 & 48), 3-bit (SGR 30-37 & 40-47),
+	// 4-bit (SGR 90-97 & 100-107), and 256-color (SGR 38;5 & 48;5) indexed
+	// color tables. We don't support changing the tables, but we do support
+	// querying them.
 	if (!strncmp(vte->osc_arg, "4;", 2)) {
 		do_osc_4(vte, vte->osc_arg + 2, end_seq);
 		return true;
