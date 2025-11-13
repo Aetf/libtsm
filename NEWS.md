@@ -1,5 +1,10 @@
 # libtsm Release News
 
+## CHANGES WITH 4.3.0:
+### New features
+* Add OSC 4, 10 and 11 support (only read color, not set it) https://github.com/Aetf/libtsm/pull/55
+* Add a new API, tsm_screen_selection_word() to select a word at a given position https://github.com/Aetf/libtsm/pull/54
+
 ## CHANGES WITH 4.2.0:
 ### New features
 * Add shift arrow keys by @michael-oberpriller in https://github.com/Aetf/libtsm/pull/46
